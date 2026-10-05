@@ -1,0 +1,6 @@
+{
+  "name": "HOME SPORT - Sport Product Catalog",
+  "description": "Sport product catalog for HOME SPORT featuring football boots, jerseys, sizes, stock availability, USD/KHR currency, and direct Telegram/Messenger order integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
