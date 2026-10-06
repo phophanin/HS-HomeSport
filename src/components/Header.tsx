@@ -48,15 +48,15 @@ export const Header: React.FC<HeaderProps> = ({
       {/* 1. Top Announcement Bar (Clean normal text, no emojis) */}
       <div className="bg-neutral-900 text-neutral-200 text-xs py-2 px-4 sm:px-8 border-b border-neutral-800">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          {/* Left: Direct Telegram Link */}
+          {/* Left: ផ្ទះកីឡា Link */}
           <a
             href={`https://t.me/${cleanTelegramUsername}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sky-400 hover:text-sky-300 font-bold text-xs tracking-wide transition-colors shrink-0"
-            title="Chat on Telegram"
+            className="text-sky-400 hover:text-sky-300 font-bold text-sm sm:text-base transition-colors shrink-0 font-khmer inline-flex items-center"
+            title="ផ្ទះកីឡា"
           >
-            <span>Telegram: @{cleanTelegramUsername}</span>
+            <span>ផ្ទះកីឡា</span>
           </a>
 
           {/* Center Announcement (Pure clean text) */}
@@ -211,9 +211,9 @@ export const Header: React.FC<HeaderProps> = ({
               href={`https://t.me/${cleanTelegramUsername}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full py-2 bg-sky-500 text-white rounded-lg text-xs font-bold text-center"
+              className="w-full py-2 bg-sky-500 text-white rounded-lg text-xs font-bold text-center font-khmer"
             >
-              Telegram: @{cleanTelegramUsername}
+              {language === 'km' ? 'ផ្ទះកីឡា Telegram' : `Telegram: @${cleanTelegramUsername}`}
             </a>
           </div>
         </div>

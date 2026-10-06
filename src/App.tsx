@@ -15,7 +15,6 @@ import { ProductDetailModal } from './components/ProductDetailModal';
 import { InquiryBagDrawer } from './components/InquiryBagDrawer';
 import { AdminPanelModal } from './components/AdminPanelModal';
 import { AdminPasscodeModal } from './components/AdminPasscodeModal';
-import { ClubBanner } from './components/ClubBanner';
 import { Footer } from './components/Footer';
 import {
   generateSingleOrderMessage,
@@ -419,9 +418,6 @@ export default function App() {
             )}
           </div>
         </section>
-
-        {/* 6. Telegram Club & VIP Community Banner */}
-        <ClubBanner language={language} settings={settings} />
       </main>
 
       {/* Floating Action Buttons on Mobile (Clean text buttons) */}
