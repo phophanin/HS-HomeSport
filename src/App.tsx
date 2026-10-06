@@ -48,6 +48,7 @@ export default function App() {
       try {
         const parsed = JSON.parse(saved);
         return {
+          ...DEFAULT_STORE_SETTINGS,
           ...parsed,
           telegramUsername: 'doublenin', // Explicitly guaranteed
         };
