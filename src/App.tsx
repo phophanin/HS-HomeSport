@@ -11,6 +11,7 @@ import { CategoryIconStrip } from './components/CategoryIconStrip';
 import { CategoryBannerGrid } from './components/CategoryBannerGrid';
 import { FilterBar, SortOption } from './components/FilterBar';
 import { ProductCard } from './components/ProductCard';
+import { ProductShowcaseView } from './components/ProductShowcaseView';
 import { ProductDetailModal } from './components/ProductDetailModal';
 import { InquiryBagDrawer } from './components/InquiryBagDrawer';
 import { AdminPanelModal } from './components/AdminPanelModal';
@@ -92,6 +93,15 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isPasscodeOpen, setIsPasscodeOpen] = useState(false);
+
+  // Interactive React Showcase state
+  const [showcaseProductId, setShowcaseProductId] = useState<string>('hs-01');
+  const showcaseSectionRef = useRef<HTMLDivElement>(null);
+
+  const currentShowcaseProduct = useMemo(
+    () => products.find((p) => p.id === showcaseProductId) || products[0],
+    [products, showcaseProductId]
+  );
 
   const handleRequestAdminAccess = () => {
     setIsPasscodeOpen(true);
@@ -224,7 +234,8 @@ export default function App() {
   };
 
   const handleSelectProduct = (product: Product) => {
-    setActiveModalProduct(product);
+    setShowcaseProductId(product.id);
+    showcaseSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleAddToCart = (product: Product, size: string, quantity: number) => {
@@ -326,7 +337,58 @@ export default function App() {
           settings={settings}
         />
 
-        {/* 5. Main Catalog Section */}
+        {/* 5. Interactive React Product Spotlight Showcase */}
+        <section ref={showcaseSectionRef} className="scroll-mt-20 py-8 border-y border-neutral-200/80 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 font-mono">
+                  {language === 'km' ? 'ផ្ទាំងបង្ហាញបច្ចេកវិទ្យាអន្តរកម្ម' : 'INTERACTIVE REACT SHOWCASE'}
+                </span>
+              </div>
+              <h2 className="font-athletic text-2xl sm:text-3xl font-bold uppercase tracking-tight text-neutral-900 mt-0.5">
+                {language === 'km' ? 'ទំនិញលេចធ្លោ & បច្ចេកវិទ្យាកីឡា' : 'Featured Gear Spotlight'}
+              </h2>
+            </div>
+
+            {/* Quick Gear Switcher Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1">
+              <span className="text-[11px] font-bold text-neutral-400 font-mono hidden sm:inline mr-1">
+                Select:
+              </span>
+              {products.slice(0, 5).map((p) => {
+                const isSelected = p.id === (currentShowcaseProduct?.id || products[0]?.id);
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => setShowcaseProductId(p.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      isSelected
+                        ? 'bg-neutral-900 text-white shadow-xs'
+                        : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
+                    }`}
+                  >
+                    <span>{p.brand} {p.name.split(' ').slice(1, 3).join(' ')}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {currentShowcaseProduct && (
+            <ProductShowcaseView
+              product={currentShowcaseProduct}
+              currency={currency}
+              language={language}
+              settings={settings}
+              onAddToCart={handleAddToCart}
+              onOpenTelegram={handleDirectTelegramOrder}
+            />
+          )}
+        </section>
+
+        {/* 6. Main Catalog Section */}
         <section ref={catalogSectionRef} className="py-8 scroll-mt-20">
           {/* Section Header */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-4 flex items-center justify-between">

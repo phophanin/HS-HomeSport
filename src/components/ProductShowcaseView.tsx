@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Star,
   Ruler,
@@ -42,6 +42,13 @@ export const ProductShowcaseView: React.FC<ProductShowcaseViewProps> = ({
   const [activeTab, setActiveTab] = useState<'details' | 'materials' | 'size' | 'shipping'>('details');
   const [addedToast, setAddedToast] = useState(false);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+    const firstSize = product.sizes.find((s) => s.stock > 0)?.size || product.sizes[0]?.size || '';
+    setSelectedSize(firstSize);
+    setSelectedColor(product.colorVariants?.[0]?.name || product.color || 'Default');
+  }, [product.id]);
 
   const discount = calculateDiscount(product.price, product.salePrice);
   const activePrice = product.salePrice ?? product.price;
