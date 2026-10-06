@@ -6,18 +6,15 @@ import {
   Edit2,
   Save,
   RotateCcw,
-  Sliders,
   DollarSign,
   Package,
-  Layers,
   Settings,
   Sparkles,
   Download,
-  Upload,
   Check,
 } from 'lucide-react';
 import { BRANDS, CATEGORIES, DEFAULT_PRODUCTS } from '../data/defaultProducts';
-import { Product, ProductSize, StoreSettings } from '../types';
+import { Product, StoreSettings } from '../types';
 import { calculateDiscount, getTotalStock } from '../utils/formatters';
 
 interface AdminPanelModalProps {
@@ -37,23 +34,23 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   settings,
   onSaveSettings,
 }) => {
-  const [activeTab, setActiveTab] = useState<'products' | 'add' | 'settings'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'add' | 'settings' | 'banners'>('products');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // New/Edit Product Form State
   const [formData, setFormData] = useState<Partial<Product>>({
     name: '',
     nameKm: '',
-    brand: 'Nike',
+    subtitle: '',
+    brand: 'HOME SPORT',
     category: 'boots',
-    price: 100,
-    salePrice: 79,
+    price: 120,
+    salePrice: 89,
     sku: 'HS-PRO-01',
     groundType: 'FG',
-    color: 'Black / Gold',
+    color: 'White / Silver',
     description: '',
     descriptionKm: '',
-    images: ['https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80'],
+    images: ['/src/assets/images/product_boot_white_1791256052582.jpg'],
     sizes: [
       { size: '39', stock: 2 },
       { size: '40', stock: 4 },
@@ -69,36 +66,33 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [newSizeInput, setNewSizeInput] = useState('');
   const [newStockInput, setNewStockInput] = useState(1);
-
-  // Store Settings Form State
   const [settingsForm, setSettingsForm] = useState<StoreSettings>({ ...settings });
   const [saveToast, setSaveToast] = useState(false);
 
   if (!isOpen) return null;
 
-  // Handle start editing an existing product
   const handleStartEdit = (product: Product) => {
     setEditingProduct(product);
     setFormData({ ...product });
     setActiveTab('add');
   };
 
-  // Reset form to blank template
   const handleStartAddNew = () => {
     setEditingProduct(null);
     setFormData({
       name: '',
       nameKm: '',
-      brand: 'Nike',
+      subtitle: '',
+      brand: 'HOME SPORT',
       category: 'boots',
       price: 120,
       salePrice: 89,
       sku: `HS-${Math.floor(1000 + Math.random() * 9000)}`,
       groundType: 'FG',
-      color: 'Volt Yellow / Black',
+      color: 'White / Gold',
       description: 'High performance football gear with responsive touch and durable traction.',
       descriptionKm: 'សម្ភារៈកីឡាគុណភាពខ្ពស់ ស្បែកទន់ស្រួល និងបាតទ្រនាប់រឹងមាំសម្រាប់ទីលាន។',
-      images: ['https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80'],
+      images: ['/src/assets/images/product_boot_white_1791256052582.jpg'],
       sizes: [
         { size: '39', stock: 2 },
         { size: '40', stock: 3 },
@@ -113,7 +107,6 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
     setActiveTab('add');
   };
 
-  // Add size row in form
   const handleAddSize = () => {
     if (!newSizeInput.trim()) return;
     const existing = formData.sizes || [];
@@ -145,7 +138,81 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
     });
   };
 
-  // Quick Stock adjustment directly on the table
+  const handleAddImageUrl = () => {
+    if (!imageUrlInput.trim()) return;
+    const existing = formData.images || [];
+    setFormData({
+      ...formData,
+      images: [...existing, imageUrlInput.trim()],
+    });
+    setImageUrlInput('');
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+    const existing = formData.images || [];
+    setFormData({
+      ...formData,
+      images: existing.filter((_, idx) => idx !== indexToRemove),
+    });
+  };
+
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        const base64Url = event.target.result as string;
+        const existing = formData.images || [];
+        setFormData({
+          ...formData,
+          images: [...existing, base64Url],
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleSelectPresetImage = (url: string) => {
+    const existing = formData.images || [];
+    if (!existing.includes(url)) {
+      setFormData({
+        ...formData,
+        images: [...existing, url],
+      });
+    }
+  };
+
+  const handleBannerUpload = (
+    field: keyof StoreSettings,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        const base64Url = event.target.result as string;
+        const updated = { ...settingsForm, [field]: base64Url };
+        setSettingsForm(updated);
+        onSaveSettings(updated);
+        setSaveToast(true);
+        setTimeout(() => setSaveToast(false), 2000);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleBannerUrlChange = (field: keyof StoreSettings, url: string) => {
+    const updated = { ...settingsForm, [field]: url };
+    setSettingsForm(updated);
+    onSaveSettings(updated);
+    setSaveToast(true);
+    setTimeout(() => setSaveToast(false), 2000);
+  };
+
   const handleTableQuickStock = (productId: string, sizeName: string, delta: number) => {
     const updated = products.map((p) => {
       if (p.id !== productId) return p;
@@ -159,7 +226,6 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
     onSaveProducts(updated);
   };
 
-  // Delete product
   const handleDeleteProduct = (id: string) => {
     if (window.confirm('តើអ្នកពិតជាចង់លុបទំនិញនេះចេញពី Catalog មែនទេ?')) {
       const updated = products.filter((p) => p.id !== id);
@@ -167,7 +233,6 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
     }
   };
 
-  // Save product from form
   const handleSaveProductForm = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name?.trim()) {
@@ -176,15 +241,11 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
     }
 
     if (editingProduct) {
-      // Update
       const updated = products.map((p) =>
-        p.id === editingProduct.id
-          ? ({ ...p, ...formData, id: p.id } as Product)
-          : p
+        p.id === editingProduct.id ? ({ ...p, ...formData, id: p.id } as Product) : p
       );
       onSaveProducts(updated);
     } else {
-      // Create new
       const newProduct: Product = {
         ...(formData as Product),
         id: `hs-${Date.now().toString().slice(-4)}`,
@@ -197,7 +258,6 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
     setEditingProduct(null);
   };
 
-  // Save Store Settings
   const handleSaveSettingsForm = (e: React.FormEvent) => {
     e.preventDefault();
     onSaveSettings(settingsForm);
@@ -205,14 +265,12 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
     setTimeout(() => setSaveToast(false), 2000);
   };
 
-  // Reset to default sample catalog
   const handleResetCatalog = () => {
     if (window.confirm('តើអ្នកចង់ Reset ទិន្នន័យ Catalog ទៅទិន្នន័យគំរូដើមវិញទេ?')) {
       onSaveProducts(DEFAULT_PRODUCTS);
     }
   };
 
-  // Export JSON
   const handleExportJSON = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(products, null, 2));
     const downloadAnchor = document.createElement('a');
@@ -223,69 +281,48 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
     downloadAnchor.remove();
   };
 
-  // Import JSON
-  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (Array.isArray(parsed)) {
-          onSaveProducts(parsed);
-          alert('បានបញ្ចូលទិន្នន័យ Catalog ដោយជោគជ័យ!');
-        } else {
-          alert('ទម្រង់ JSON មិនត្រឹមត្រូវ');
-        }
-      } catch (err) {
-        alert('មានបញ្ហាក្នុងការអានឯកសារ JSON');
-      }
-    };
-    reader.readAsText(file);
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto bg-neutral-950/85 backdrop-blur-md">
-      <div 
-        className="relative w-full max-w-5xl bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh] text-neutral-100"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto bg-black/50 backdrop-blur-xs">
+      <div
+        className="relative w-full max-w-5xl bg-white border border-neutral-200 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh] text-neutral-900"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-neutral-800 flex items-center justify-between bg-neutral-950">
+        <div className="px-6 py-4 border-b border-neutral-150 flex items-center justify-between bg-white">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-athletic text-base font-bold">
+            <div className="w-8 h-8 rounded-lg bg-[#383b32] text-white flex items-center justify-center font-athletic text-base font-bold">
               HS
             </div>
             <div>
-              <h2 className="font-athletic text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <h2 className="font-athletic text-lg font-bold text-neutral-900 uppercase tracking-wider flex items-center gap-2">
                 <span>HOME SPORT Store Admin</span>
-                <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-mono normal-case">
-                  PHASE 5 & 6
+                <span className="text-xs px-2 py-0.5 rounded bg-neutral-100 text-neutral-700 font-mono normal-case">
+                  Settings
                 </span>
               </h2>
-              <p className="text-xs text-neutral-400">
-                គ្រប់គ្រងទំនិញ, ស្តុកតាម Size, តម្លៃ USD/KHR និងការតភ្ជាប់ Telegram
+              <p className="text-xs text-neutral-500 font-khmer">
+                គ្រប់គ្រងទំនិញ, ស្តុកតាម Size, អត្រាប្រាក់ USD/KHR និងតំណភ្ជាប់ Telegram
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-black hover:bg-neutral-100 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="px-6 pt-3 border-b border-neutral-800 bg-neutral-950/60 flex items-center justify-between">
+        <div className="px-6 pt-3 border-b border-neutral-200 bg-neutral-50/60 flex items-center justify-between">
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('products')}
-              className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+              className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'products'
-                  ? 'border-amber-400 text-amber-400'
-                  : 'border-transparent text-neutral-400 hover:text-neutral-200'
+                  ? 'border-[#383b32] text-[#383b32]'
+                  : 'border-transparent text-neutral-500 hover:text-black'
               }`}
             >
               <Package className="w-4 h-4" />
@@ -294,43 +331,51 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
 
             <button
               onClick={handleStartAddNew}
-              className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+              className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'add'
-                  ? 'border-amber-400 text-amber-400'
-                  : 'border-transparent text-neutral-400 hover:text-neutral-200'
+                  ? 'border-[#383b32] text-[#383b32]'
+                  : 'border-transparent text-neutral-500 hover:text-black'
               }`}
             >
               <Plus className="w-4 h-4" />
-              <span>{editingProduct ? 'កែប្រែទំនិញ' : 'បន្ថែមទំនិញថ្មី (Add Product)'}</span>
+              <span>{editingProduct ? 'កែប្រែទំនិញ' : 'បន្ថែមទំនិញថ្មី'}</span>
             </button>
 
             <button
               onClick={() => setActiveTab('settings')}
-              className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+              className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'settings'
-                  ? 'border-amber-400 text-amber-400'
-                  : 'border-transparent text-neutral-400 hover:text-neutral-200'
+                  ? 'border-[#383b32] text-[#383b32]'
+                  : 'border-transparent text-neutral-500 hover:text-black'
               }`}
             >
               <Settings className="w-4 h-4" />
               <span>ការកំណត់ហាង & អត្រាប្រាក់</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('banners')}
+              className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'banners'
+                  ? 'border-[#383b32] text-[#383b32]'
+                  : 'border-transparent text-neutral-500 hover:text-black'
+              }`}
+            >
+              <span>រូបភាពទំព័រដើម (Homepage Banners)</span>
+            </button>
           </div>
 
-          {/* Quick Data Actions */}
           <div className="hidden sm:flex items-center gap-2 pb-2">
             <button
               onClick={handleExportJSON}
-              className="px-2.5 py-1 text-[11px] font-semibold bg-neutral-800 hover:bg-neutral-750 text-neutral-300 rounded-lg flex items-center gap-1"
-              title="Export Products as JSON"
+              className="px-2.5 py-1 text-[11px] font-semibold bg-white border border-neutral-200 hover:bg-neutral-100 text-neutral-700 rounded-lg flex items-center gap-1 cursor-pointer"
             >
               <Download className="w-3 h-3" />
               <span>Export JSON</span>
             </button>
             <button
               onClick={handleResetCatalog}
-              className="px-2.5 py-1 text-[11px] font-semibold bg-neutral-800 hover:bg-neutral-750 text-neutral-400 hover:text-red-400 rounded-lg flex items-center gap-1"
-              title="Reset to initial default demo data"
+              className="px-2.5 py-1 text-[11px] font-semibold bg-white border border-neutral-200 hover:bg-rose-50 text-neutral-500 hover:text-rose-600 rounded-lg flex items-center gap-1 cursor-pointer"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Reset</span>
@@ -340,56 +385,56 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
 
         {/* Tab Contents */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {/* TAB 1: PRODUCTS LIST & INLINE STOCK */}
+          {/* TAB 1: PRODUCTS LIST */}
           {activeTab === 'products' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-bold text-sm text-neutral-200">
+                  <h3 className="font-bold text-sm text-neutral-900 font-khmer">
                     តារាងគ្រប់គ្រងស្តុក (Stock & Size Inventory)
                   </h3>
-                  <p className="text-xs text-neutral-400 font-khmer">
-                    អ្នកអាចចុច +/- ដើម្បីកែសម្រួលស្តុកតាម Size ភ្លាមៗ ឬចុចកែប្រែព័ត៌មានទំនិញ។
+                  <p className="text-xs text-neutral-500 font-khmer">
+                    ចុច +/- ដើម្បីកែសម្រួលស្តុកតាម Size ភ្លាមៗ ឬចុចកែប្រែទំនិញ។
                   </p>
                 </div>
                 <button
                   onClick={handleStartAddNew}
-                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-amber-500/20"
+                  className="px-3.5 py-2 bg-[#383b32] hover:bg-[#282a23] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>បន្ថែមទំនិញ</span>
                 </button>
               </div>
 
-              <div className="overflow-x-auto border border-neutral-800 rounded-2xl">
+              <div className="overflow-x-auto border border-neutral-200 rounded-2xl">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-950 text-neutral-400 uppercase tracking-wider font-athletic text-[11px] border-b border-neutral-800">
+                  <thead className="bg-neutral-50 text-neutral-600 uppercase tracking-wider font-athletic text-[11px] border-b border-neutral-200">
                     <tr>
                       <th className="p-3">Product</th>
-                      <th className="p-3">Brand / Cat</th>
+                      <th className="p-3">Category</th>
                       <th className="p-3">Price (USD)</th>
                       <th className="p-3">Sizes & Stock Counter</th>
                       <th className="p-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-800/80 bg-neutral-900/60">
+                  <tbody className="divide-y divide-neutral-200/80 bg-white">
                     {products.map((p) => {
                       const totalStock = getTotalStock(p);
                       const discount = calculateDiscount(p.price, p.salePrice);
                       return (
-                        <tr key={p.id} className="hover:bg-neutral-850/50 transition-colors">
-                          {/* Image & Title */}
+                        <tr key={p.id} className="hover:bg-neutral-50/60 transition-colors">
                           <td className="p-3">
                             <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 rounded-lg bg-neutral-950 border border-neutral-800 p-1 shrink-0 flex items-center justify-center">
+                              <div className="w-12 h-12 rounded-lg bg-neutral-100 border border-neutral-200 p-1 shrink-0 flex items-center justify-center">
                                 <img
                                   src={p.images[0]}
                                   alt=""
+                                  referrerPolicy="no-referrer"
                                   className="w-full h-full object-contain"
                                 />
                               </div>
                               <div className="min-w-0 max-w-[200px]">
-                                <div className="font-bold text-white truncate">{p.name}</div>
+                                <div className="font-bold text-neutral-900 truncate">{p.name}</div>
                                 <div className="text-[10px] text-neutral-400 font-mono">
                                   {p.sku}
                                 </div>
@@ -397,55 +442,50 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                             </div>
                           </td>
 
-                          {/* Brand & Category */}
                           <td className="p-3">
-                            <span className="px-2 py-0.5 rounded bg-neutral-800 text-neutral-200 font-athletic font-bold mr-1">
+                            <span className="px-2 py-0.5 rounded bg-neutral-100 text-neutral-700 font-mono font-bold mr-1">
                               {p.brand}
                             </span>
-                            <span className="text-[11px] text-neutral-400 block mt-1">
+                            <span className="text-[11px] text-neutral-500 block mt-1">
                               {p.category}
                             </span>
                           </td>
 
-                          {/* Price */}
                           <td className="p-3">
-                            <div className="font-athletic text-sm font-bold text-amber-400">
+                            <div className="font-athletic text-sm font-bold text-neutral-900 tabular-nums">
                               ${(p.salePrice ?? p.price).toFixed(2)}
                             </div>
                             {discount > 0 && (
-                              <div className="text-[10px] text-neutral-500 line-through">
+                              <div className="text-[10px] text-neutral-400 line-through tabular-nums">
                                 ${p.price.toFixed(2)} (-{discount}%)
                               </div>
                             )}
                           </td>
 
-                          {/* Inline Sizes Stock Editor */}
                           <td className="p-3">
                             <div className="flex flex-wrap gap-1.5 max-w-sm">
                               {p.sizes.map((s) => (
                                 <div
                                   key={s.size}
-                                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg border text-[11px] font-athletic ${
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] font-mono ${
                                     s.stock > 0
-                                      ? 'bg-neutral-950 border-neutral-750 text-neutral-200'
-                                      : 'bg-red-950/20 border-red-900/40 text-red-400'
+                                      ? 'bg-neutral-50 border-neutral-200 text-neutral-800'
+                                      : 'bg-rose-50 border-rose-200 text-rose-600'
                                   }`}
                                 >
                                   <span className="font-bold">{s.size}:</span>
-                                  <span className="font-mono text-amber-400 font-bold">{s.stock}</span>
+                                  <span className="font-bold">{s.stock}</span>
                                   <div className="flex gap-0.5 ml-1">
                                     <button
                                       onClick={() => handleTableQuickStock(p.id, s.size, -1)}
                                       disabled={s.stock <= 0}
-                                      className="w-4 h-4 bg-neutral-800 hover:bg-neutral-700 text-white rounded flex items-center justify-center text-[10px] disabled:opacity-30"
-                                      title="Decrease stock by 1"
+                                      className="w-4 h-4 bg-white border border-neutral-300 hover:bg-neutral-100 rounded flex items-center justify-center text-[10px] disabled:opacity-30 cursor-pointer"
                                     >
                                       -
                                     </button>
                                     <button
                                       onClick={() => handleTableQuickStock(p.id, s.size, 1)}
-                                      className="w-4 h-4 bg-neutral-800 hover:bg-neutral-700 text-white rounded flex items-center justify-center text-[10px]"
-                                      title="Increase stock by 1"
+                                      className="w-4 h-4 bg-white border border-neutral-300 hover:bg-neutral-100 rounded flex items-center justify-center text-[10px] cursor-pointer"
                                     >
                                       +
                                     </button>
@@ -454,24 +494,21 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                               ))}
                             </div>
                             <div className="text-[10px] text-neutral-500 mt-1 font-mono">
-                              Total Stock: {totalStock} pairs
+                              Total Stock: {totalStock}
                             </div>
                           </td>
 
-                          {/* Action Buttons */}
                           <td className="p-3 text-right">
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => handleStartEdit(p)}
-                                className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-amber-400"
-                                title="Edit product"
+                                className="p-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 cursor-pointer"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDeleteProduct(p.id)}
-                                className="p-1.5 rounded-lg bg-neutral-800 hover:bg-red-500/20 text-neutral-400 hover:text-red-400"
-                                title="Delete product"
+                                className="p-1.5 rounded-lg bg-neutral-100 hover:bg-rose-100 text-neutral-500 hover:text-rose-600 cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -486,55 +523,48 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
             </div>
           )}
 
-          {/* TAB 2: ADD OR EDIT PRODUCT */}
+          {/* TAB 2: ADD OR EDIT */}
           {activeTab === 'add' && (
-            <form onSubmit={handleSaveProductForm} className="space-y-5 max-w-3xl mx-auto">
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 shrink-0" />
+            <form onSubmit={handleSaveProductForm} className="space-y-5 max-w-3xl mx-auto text-xs">
+              <div className="p-3 rounded-xl bg-neutral-100 border border-neutral-200 text-neutral-800 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-neutral-600 shrink-0" />
                 <span>
                   {editingProduct
                     ? `កំពុងកែប្រែទំនិញ: ${editingProduct.name}`
-                    : 'បន្ថែមទំនិញថ្មីទៅក្នុង Catalog (បញ្ចូល Stock តាម Size, តម្លៃ, រូបភាព)'}
+                    : 'បន្ថែមទំនិញថ្មី (កំណត់ទំហំ Size, ស្តុក, តម្លៃ, រូបភាព)'}
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                {/* Product Name EN */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="font-bold text-neutral-300">
-                    Product Name (English) *
-                  </label>
+                  <label className="font-bold text-neutral-700">Product Name *</label>
                   <input
                     type="text"
                     required
                     value={formData.name || ''}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g. Nike Air Zoom Mercurial Vapor 16"
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-amber-400"
+                    placeholder="e.g. HOME SPORT COURT PRO"
+                    className="w-full px-3 py-2 bg-neutral-50 border border-neutral-300 rounded-xl text-neutral-900 focus:outline-none focus:border-black"
                   />
                 </div>
 
-                {/* Product Name KM */}
                 <div className="space-y-1">
-                  <label className="font-bold text-neutral-300 font-khmer">
-                    ឈ្មោះទំនិញ (ភាសាខ្មែរ)
-                  </label>
+                  <label className="font-bold text-neutral-700 font-khmer">Subtitle / ភាសាខ្មែរ</label>
                   <input
                     type="text"
-                    value={formData.nameKm || ''}
-                    onChange={(e) => setFormData({ ...formData, nameKm: e.target.value })}
-                    placeholder="ឧ. ស្បែកជើងបាល់ទាត់ Nike Mercurial"
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-amber-400"
+                    value={formData.subtitle || ''}
+                    onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+                    placeholder="e.g. ស្បែកជើងបាល់ទាត់ល្បឿនលឿន"
+                    className="w-full px-3 py-2 bg-neutral-50 border border-neutral-300 rounded-xl text-neutral-900 focus:outline-none focus:border-black font-khmer"
                   />
                 </div>
 
-                {/* Brand */}
                 <div className="space-y-1">
-                  <label className="font-bold text-neutral-300">Brand</label>
+                  <label className="font-bold text-neutral-700">Brand</label>
                   <select
-                    value={formData.brand || 'Nike'}
+                    value={formData.brand || 'HOME SPORT'}
                     onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 focus:outline-none focus:border-amber-400"
+                    className="w-full px-3 py-2 bg-neutral-50 border border-neutral-300 rounded-xl text-neutral-900 focus:outline-none focus:border-black"
                   >
                     {BRANDS.filter((b) => b !== 'All Brands').map((b) => (
                       <option key={b} value={b}>
@@ -544,13 +574,12 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                   </select>
                 </div>
 
-                {/* Category */}
                 <div className="space-y-1">
-                  <label className="font-bold text-neutral-300">Category</label>
+                  <label className="font-bold text-neutral-700">Category</label>
                   <select
                     value={formData.category || 'boots'}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 focus:outline-none focus:border-amber-400"
+                    className="w-full px-3 py-2 bg-neutral-50 border border-neutral-300 rounded-xl text-neutral-900 focus:outline-none focus:border-black"
                   >
                     {CATEGORIES.filter((c) => c.id !== 'all').map((c) => (
                       <option key={c.id} value={c.id}>
@@ -560,26 +589,20 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                   </select>
                 </div>
 
-                {/* Original Price */}
                 <div className="space-y-1">
-                  <label className="font-bold text-neutral-300">
-                    Original Price ($ USD) *
-                  </label>
+                  <label className="font-bold text-neutral-700">Original Price ($ USD) *</label>
                   <input
                     type="number"
                     step="0.5"
                     required
                     value={formData.price || 0}
                     onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 focus:outline-none focus:border-amber-400"
+                    className="w-full px-3 py-2 bg-neutral-50 border border-neutral-300 rounded-xl text-neutral-900 focus:outline-none focus:border-black"
                   />
                 </div>
 
-                {/* Sale Price */}
                 <div className="space-y-1">
-                  <label className="font-bold text-neutral-300">
-                    Sale Price ($ USD) (ទុកចោលបើតម្លៃពេញ)
-                  </label>
+                  <label className="font-bold text-neutral-700">Sale Price ($ USD)</label>
                   <input
                     type="number"
                     step="0.5"
@@ -590,70 +613,145 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                         salePrice: e.target.value ? Number(e.target.value) : undefined,
                       })
                     }
-                    placeholder="e.g. 99"
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 focus:outline-none focus:border-amber-400"
+                    placeholder="e.g. 95"
+                    className="w-full px-3 py-2 bg-neutral-50 border border-neutral-300 rounded-xl text-neutral-900 focus:outline-none focus:border-black"
                   />
                 </div>
+              </div>
 
-                {/* SKU Code */}
-                <div className="space-y-1">
-                  <label className="font-bold text-neutral-300">SKU Code</label>
-                  <input
-                    type="text"
-                    value={formData.sku || ''}
-                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                    placeholder="e.g. NK-MERC-16"
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 focus:outline-none focus:border-amber-400"
-                  />
+              {/* Product Images & Upload Section */}
+              <div className="space-y-3 pt-2 border-t border-neutral-200">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-neutral-800 text-sm">
+                    រូបភាពទំនិញ (Product Images & Upload)
+                  </label>
+                  <span className="text-[11px] font-semibold text-neutral-500">
+                    {formData.images?.length || 0} រូបភាព
+                  </span>
                 </div>
 
-                {/* Ground Type / Color */}
-                <div className="space-y-1">
-                  <label className="font-bold text-neutral-300">Ground Type & Color</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      value={formData.groundType || ''}
-                      onChange={(e) => setFormData({ ...formData, groundType: e.target.value })}
-                      placeholder="FG, AG, TF, IC"
-                      className="px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 focus:outline-none focus:border-amber-400"
-                    />
-                    <input
-                      type="text"
-                      value={formData.color || ''}
-                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      placeholder="e.g. Black / Volt"
-                      className="px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 focus:outline-none focus:border-amber-400"
-                    />
+                {/* Current Images Gallery Preview */}
+                <div className="flex flex-wrap gap-2.5">
+                  {formData.images && formData.images.length > 0 ? (
+                    formData.images.map((img, idx) => (
+                      <div
+                        key={idx}
+                        className="relative group w-20 h-20 rounded-xl bg-neutral-100 border border-neutral-200 overflow-hidden shrink-0 p-1 flex items-center justify-center shadow-2xs"
+                      >
+                        <img
+                          src={img}
+                          alt=""
+                          className="w-full h-full object-contain"
+                        />
+                        {idx === 0 && (
+                          <span className="absolute top-1 left-1 bg-neutral-900 text-white text-[8px] font-bold px-1 rounded">
+                            Cover
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] w-4 h-4 flex items-center justify-center cursor-pointer shadow-xs"
+                          title="Delete photo"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-3 bg-neutral-50 border border-dashed border-neutral-300 rounded-xl text-neutral-400 text-xs w-full text-center">
+                      មិនទាន់មានរូបភាពនៅឡើយទេ
+                    </div>
+                  )}
+                </div>
+
+                {/* Add Image Options: File Upload from Phone/Computer OR Image URL */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {/* Option A: Direct Device File Upload */}
+                  <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl space-y-1.5">
+                    <span className="font-bold text-neutral-800 block text-xs">
+                      Upload រូបភាពពីទូរស័ព្ទ ឬកុំព្យូទ័រ
+                    </span>
+                    <label className="block w-full py-2 px-3 bg-white hover:bg-neutral-100 border border-neutral-300 rounded-lg text-center font-bold text-neutral-800 cursor-pointer transition-colors text-xs shadow-2xs">
+                      <span>ជ្រើសរើសឯកសាររូបភាព (Choose File)</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {/* Option B: Image URL link */}
+                  <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl space-y-1.5">
+                    <span className="font-bold text-neutral-800 block text-xs">
+                      ឬបិទភ្ជាប់តំណ Link រូបភាព (Image URL)
+                    </span>
+                    <div className="flex gap-1.5">
+                      <input
+                        type="url"
+                        value={imageUrlInput}
+                        onChange={(e) => setImageUrlInput(e.target.value)}
+                        placeholder="https://example.com/shoe.jpg"
+                        className="flex-1 px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs text-neutral-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddImageUrl}
+                        className="px-3 py-1.5 bg-neutral-900 hover:bg-black text-white rounded-lg font-bold text-xs cursor-pointer"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Option C: Quick Preset Sport Photos */}
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[11px] font-semibold text-neutral-500">
+                    ជ្រើសរើសរូបភាពគំរូកីឡាដែលមានស្រាប់ (Quick Presets):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: 'Mercurial FG', url: '/src/assets/images/boot_mercurial_vapor_1791205277714.jpg' },
+                      { label: 'Predator Elite', url: '/src/assets/images/boot_predator_elite_1791205294570.jpg' },
+                      { label: 'Cambodia Kit', url: '/src/assets/images/jersey_cambodia_kit_1791205311701.jpg' },
+                      { label: 'Grip Socks', url: '/src/assets/images/gear_grip_socks_1791205326910.jpg' },
+                      { label: 'Sport Bag', url: '/src/assets/images/cat_sport_bags_1791256037463.jpg' },
+                      { label: 'Shorts', url: '/src/assets/images/product_shorts_white_1791256091416.jpg' },
+                      { label: 'Cap', url: '/src/assets/images/product_cap_white_1791256076833.jpg' },
+                      { label: 'White Boot', url: '/src/assets/images/product_boot_white_1791256052582.jpg' },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => handleSelectPresetImage(preset.url)}
+                        className="px-2 py-1 bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 text-neutral-700 rounded text-[11px] font-medium cursor-pointer"
+                      >
+                        + {preset.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* Multi-Size Stock Matrix (PHASE 6 from user prompt) */}
-              <div className="space-y-2.5 pt-2 border-t border-neutral-800">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-bold text-xs text-white">
-                      ការគ្រប់គ្រង Size & Stock (PHASE 6: 39→0, 40→2, 41→3...)
-                    </h4>
-                    <p className="text-[11px] text-neutral-400">
-                      កំណត់ចំនួនស្តុកសម្រាប់ទំហំនីមួយៗ ដើម្បីឱ្យ Customer ដឹងមុននឹងកុម្ម៉ង់។
-                    </p>
-                  </div>
-                </div>
-
-                {/* Existing sizes */}
+              {/* Sizes and stock */}
+              <div className="space-y-2 pt-2 border-t border-neutral-200">
+                <label className="font-bold text-neutral-800">
+                  Size & Stock Management
+                </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {formData.sizes?.map((s) => (
                     <div
                       key={s.size}
-                      className="p-2.5 bg-neutral-950 border border-neutral-800 rounded-xl flex items-center justify-between"
+                      className="p-2.5 bg-neutral-50 border border-neutral-200 rounded-xl flex items-center justify-between"
                     >
                       <div>
-                        <div className="font-athletic text-sm font-bold text-amber-400">
+                        <div className="font-mono text-xs font-bold text-neutral-900">
                           Size {s.size}
                         </div>
-                        <div className="text-[10px] text-neutral-400 font-mono">
+                        <div className="text-[10px] text-neutral-500 font-mono">
                           Stock: {s.stock}
                         </div>
                       </div>
@@ -663,21 +761,21 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                           type="button"
                           onClick={() => handleUpdateSizeStock(s.size, -1)}
                           disabled={s.stock <= 0}
-                          className="w-5 h-5 bg-neutral-800 text-neutral-200 hover:bg-neutral-700 rounded text-xs flex items-center justify-center disabled:opacity-30"
+                          className="w-5 h-5 bg-white border border-neutral-300 text-neutral-700 rounded text-xs flex items-center justify-center cursor-pointer"
                         >
                           -
                         </button>
                         <button
                           type="button"
                           onClick={() => handleUpdateSizeStock(s.size, 1)}
-                          className="w-5 h-5 bg-neutral-800 text-neutral-200 hover:bg-neutral-700 rounded text-xs flex items-center justify-center"
+                          className="w-5 h-5 bg-white border border-neutral-300 text-neutral-700 rounded text-xs flex items-center justify-center cursor-pointer"
                         >
                           +
                         </button>
                         <button
                           type="button"
                           onClick={() => handleRemoveSize(s.size)}
-                          className="w-5 h-5 text-neutral-500 hover:text-red-400 ml-1"
+                          className="w-5 h-5 text-neutral-400 hover:text-rose-600 ml-1 cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -686,280 +784,454 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                   ))}
                 </div>
 
-                {/* Add new size input */}
                 <div className="flex gap-2 items-center pt-1">
                   <input
                     type="text"
                     value={newSizeInput}
                     onChange={(e) => setNewSizeInput(e.target.value)}
-                    placeholder="New Size (e.g. 45 or M)"
-                    className="w-32 px-3 py-1.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-amber-400 font-athletic"
+                    placeholder="New Size (40, M)"
+                    className="w-32 px-3 py-1.5 bg-neutral-50 border border-neutral-300 rounded-xl text-xs text-neutral-900"
                   />
                   <input
                     type="number"
                     min="0"
                     value={newStockInput}
                     onChange={(e) => setNewStockInput(Number(e.target.value))}
-                    placeholder="Stock Qty"
-                    className="w-24 px-3 py-1.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-amber-400 font-mono"
+                    placeholder="Qty"
+                    className="w-20 px-3 py-1.5 bg-neutral-50 border border-neutral-300 rounded-xl text-xs text-neutral-900"
                   />
                   <button
                     type="button"
                     onClick={handleAddSize}
-                    className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-amber-400 rounded-xl text-xs font-bold flex items-center gap-1"
+                    className="px-3 py-1.5 bg-neutral-200 hover:bg-neutral-300 text-neutral-800 rounded-xl text-xs font-semibold cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Size</span>
+                    Add Size
                   </button>
                 </div>
               </div>
 
-              {/* Product Images (Multiple Images) */}
-              <div className="space-y-2 pt-2 border-t border-neutral-800 text-xs">
-                <label className="font-bold text-neutral-300">
-                  Product Image URLs (រូបភាព Front / Side / Back / Studs)
-                </label>
-                <div className="space-y-1.5">
-                  {formData.images?.map((img, idx) => (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <input
-                        type="url"
-                        value={img}
-                        onChange={(e) => {
-                          const updated = [...(formData.images || [])];
-                          updated[idx] = e.target.value;
-                          setFormData({ ...formData, images: updated });
-                        }}
-                        className="flex-1 px-3 py-1.5 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-200 text-xs focus:outline-none focus:border-amber-400 font-mono"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = formData.images?.filter((_, i) => i !== idx) || [];
-                          setFormData({ ...formData, images: updated });
-                        }}
-                        className="p-1.5 text-neutral-500 hover:text-red-400"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={imageUrlInput}
-                      onChange={(e) => setImageUrlInput(e.target.value)}
-                      placeholder="Add another image URL (https://...)"
-                      className="flex-1 px-3 py-1.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-amber-400 font-mono"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (imageUrlInput.trim()) {
-                          setFormData({
-                            ...formData,
-                            images: [...(formData.images || []), imageUrlInput.trim()],
-                          });
-                          setImageUrlInput('');
-                        }
-                      }}
-                      className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-amber-400 rounded-xl text-xs font-bold"
-                    >
-                      Add URL
-                    </button>
-                  </div>
-                </div>
-              </div>
-
               {/* Description */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2 border-t border-neutral-800">
-                <div className="space-y-1">
-                  <label className="font-bold text-neutral-300">Description (EN)</label>
-                  <textarea
-                    rows={3}
-                    value={formData.description || ''}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 focus:outline-none focus:border-amber-400"
-                  />
-                </div>
-                <div className="space-y-1 font-khmer">
-                  <label className="font-bold text-neutral-300">ការពិពណ៌នា (ខ្មែរ)</label>
-                  <textarea
-                    rows={3}
-                    value={formData.descriptionKm || ''}
-                    onChange={(e) => setFormData({ ...formData, descriptionKm: e.target.value })}
-                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 focus:outline-none focus:border-amber-400"
-                  />
-                </div>
+              <div className="space-y-1 pt-2 border-t border-neutral-200">
+                <label className="font-bold text-neutral-700 font-khmer">ការពិពណ៌នាទំនិញ</label>
+                <textarea
+                  rows={3}
+                  value={formData.descriptionKm || formData.description || ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, descriptionKm: e.target.value, description: e.target.value })
+                  }
+                  className="w-full px-3 py-2 bg-neutral-50 border border-neutral-300 rounded-xl text-neutral-900 focus:outline-none focus:border-black font-khmer"
+                />
               </div>
 
-              {/* Badges / Status Checkboxes */}
-              <div className="flex flex-wrap gap-4 pt-2 text-xs">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.isFeatured || false}
-                    onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                    className="rounded bg-neutral-950 border-neutral-800 text-amber-500 focus:ring-0"
-                  />
-                  <span>Featured (ទំនិញពិសេស)</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.isTrending || false}
-                    onChange={(e) => setFormData({ ...formData, isTrending: e.target.checked })}
-                    className="rounded bg-neutral-950 border-neutral-800 text-amber-500 focus:ring-0"
-                  />
-                  <span>Trending / Hot (ពេញនិយម)</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.isNew || false}
-                    onChange={(e) => setFormData({ ...formData, isNew: e.target.checked })}
-                    className="rounded bg-neutral-950 border-neutral-800 text-amber-500 focus:ring-0"
-                  />
-                  <span>New Arrival (ទំនិញថ្មី)</span>
-                </label>
-              </div>
-
-              {/* Submit Buttons */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-neutral-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-neutral-200">
                 <button
                   type="button"
                   onClick={() => setActiveTab('products')}
-                  className="px-4 py-2 bg-neutral-800 hover:bg-neutral-750 text-neutral-300 rounded-xl text-xs font-bold"
+                  className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-xl font-bold cursor-pointer"
                 >
                   បោះបង់
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-neutral-950 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-amber-500/20"
+                  className="px-6 py-2 bg-[#383b32] hover:bg-[#282a23] text-white rounded-xl font-bold cursor-pointer"
                 >
-                  <Save className="w-4 h-4" />
-                  <span>{editingProduct ? 'រក្សាទុកការកែប្រែ' : 'រក្សាទុកទំនិញថ្មី'}</span>
+                  <Save className="w-4 h-4 inline mr-1" />
+                  {editingProduct ? 'រក្សាទុកការកែប្រែ' : 'រក្សាទុកទំនិញថ្មី'}
                 </button>
               </div>
             </form>
           )}
 
-          {/* TAB 3: STORE SETTINGS & EXCHANGE RATE (PHASE 8 & 9) */}
+          {/* TAB 3: SETTINGS */}
           {activeTab === 'settings' && (
             <form onSubmit={handleSaveSettingsForm} className="space-y-4 max-w-xl mx-auto text-xs">
               {saveToast && (
-                <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center gap-2 font-bold animate-in fade-in">
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-2 font-bold animate-in fade-in">
                   <Check className="w-4 h-4" />
                   <span>បានរក្សាទុកការកំណត់ហាងដោយជោគជ័យ!</span>
                 </div>
               )}
 
-              {/* Store Name & Tagline */}
               <div className="space-y-1">
-                <label className="font-bold text-neutral-300">Store Name</label>
+                <label className="font-bold text-neutral-700">Store Name</label>
                 <input
                   type="text"
                   value={settingsForm.storeName}
                   onChange={(e) => setSettingsForm({ ...settingsForm, storeName: e.target.value })}
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 focus:outline-none focus:border-amber-400 font-bold"
+                  className="w-full px-3 py-2 bg-neutral-50 border border-neutral-300 rounded-xl text-neutral-900 font-bold"
                 />
               </div>
 
-              {/* USD/KHR Exchange Rate (PHASE 8) */}
-              <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-2">
-                <div className="flex items-center gap-2 font-bold text-amber-400 text-sm">
+              {/* Exchange Rate */}
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-neutral-900">
                   <DollarSign className="w-4 h-4" />
-                  <span>PHASE 8: អត្រាប្តូរប្រាក់ USD / KHR Exchange Rate</span>
+                  <span>អត្រាប្តូរប្រាក់ USD / KHR Exchange Rate</span>
                 </div>
-                <p className="text-[11px] text-neutral-400">
-                  កំណត់អត្រាប្តូរប្រាក់សម្រាប់គណនាតម្លៃរៀល (៛) ដោយស្វ័យប្រវត្តិនឹងបង្ហាញលើ Website
-                </p>
                 <div className="flex items-center gap-3 pt-1">
-                  <span className="font-bold text-neutral-300 text-sm">1 USD ($) =</span>
+                  <span className="font-bold text-neutral-700">1 USD =</span>
                   <input
                     type="number"
-                    step="50"
                     value={settingsForm.exchangeRate}
                     onChange={(e) =>
                       setSettingsForm({ ...settingsForm, exchangeRate: Number(e.target.value) || 4100 })
                     }
-                    className="w-36 px-3 py-2 bg-neutral-900 border border-neutral-750 rounded-xl text-amber-400 font-mono font-bold text-base focus:outline-none focus:border-amber-400"
+                    className="w-32 px-3 py-2 bg-white border border-neutral-300 rounded-xl text-neutral-900 font-mono font-bold"
                   />
-                  <span className="font-bold text-neutral-300 text-sm">KHR (៛)</span>
+                  <span className="font-bold text-neutral-700">KHR (៛)</span>
                 </div>
               </div>
 
               {/* Telegram Username */}
               <div className="space-y-1">
-                <label className="font-bold text-neutral-300">
+                <label className="font-bold text-neutral-700">
                   Telegram Username (សម្រាប់ Chat to Order)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2 text-neutral-500 font-bold">@</span>
+                  <span className="absolute left-3 top-2 text-neutral-400 font-bold">@</span>
                   <input
                     type="text"
                     value={settingsForm.telegramUsername.replace('@', '')}
                     onChange={(e) =>
                       setSettingsForm({ ...settingsForm, telegramUsername: e.target.value.trim() })
                     }
-                    placeholder="homesport_catalog"
-                    className="w-full pl-8 pr-4 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 focus:outline-none focus:border-amber-400"
+                    placeholder="doublenin"
+                    className="w-full pl-8 pr-4 py-2 bg-neutral-50 border border-neutral-300 rounded-xl text-neutral-900"
                   />
                 </div>
               </div>
 
-              {/* Facebook Page */}
-              <div className="space-y-1">
-                <label className="font-bold text-neutral-300">
-                  Facebook Page ID / Username (Messenger Order)
-                </label>
-                <input
-                  type="text"
-                  value={settingsForm.facebookPage}
-                  onChange={(e) => setSettingsForm({ ...settingsForm, facebookPage: e.target.value })}
-                  placeholder="homesportkh"
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 focus:outline-none focus:border-amber-400"
-                />
-              </div>
-
               {/* Phone */}
               <div className="space-y-1">
-                <label className="font-bold text-neutral-300">Store Contact Phone</label>
+                <label className="font-bold text-neutral-700">Store Contact Phone</label>
                 <input
                   type="text"
                   value={settingsForm.phone}
                   onChange={(e) => setSettingsForm({ ...settingsForm, phone: e.target.value })}
-                  placeholder="+855 96 888 9922"
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 bg-neutral-50 border border-neutral-300 rounded-xl text-neutral-900"
                 />
               </div>
 
-              {/* Delivery Info */}
-              <div className="space-y-1">
-                <label className="font-bold text-neutral-300 font-khmer">
-                  ព័ត៌មានដឹកជញ្ជូន (ភាសាខ្មែរ)
-                </label>
-                <input
-                  type="text"
-                  value={settingsForm.deliveryInfoKm}
-                  onChange={(e) =>
-                    setSettingsForm({ ...settingsForm, deliveryInfoKm: e.target.value })
-                  }
-                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-neutral-100 focus:outline-none focus:border-amber-400"
-                />
+              {/* Admin Secret PIN Security */}
+              <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-2">
+                <div>
+                  <label className="font-bold text-neutral-900 block">
+                    លេខកូដសម្ងាត់ការពារ Admin (Secret PIN Protection)
+                  </label>
+                  <span className="text-[11px] text-neutral-600 font-khmer">
+                    ការពារមិនឱ្យ Client ឬអតិថិជនចូលកែប្រែទិន្នន័យ និងស្តុកបាន
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="text"
+                    value={settingsForm.adminPin || '8899'}
+                    onChange={(e) =>
+                      setSettingsForm({ ...settingsForm, adminPin: e.target.value.trim() })
+                    }
+                    placeholder="8899"
+                    className="w-36 px-3 py-2 bg-white border border-amber-300 rounded-xl text-neutral-900 font-mono font-bold text-sm tracking-widest"
+                  />
+                  <span className="text-[11px] text-neutral-500 font-khmer">
+                    (កូដដើម: 8899 — អ្នកអាចប្តូរជាលេខផ្ទាល់ខ្លួនបាន)
+                  </span>
+                </div>
               </div>
 
               <div className="pt-3">
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-neutral-950 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
+                  className="w-full py-3 bg-[#383b32] hover:bg-[#282a23] text-white rounded-xl font-bold cursor-pointer"
                 >
-                  <Save className="w-4 h-4" />
-                  <span>រក្សាទុកការកំណត់ហាង (Save Store Settings)</span>
+                  រក្សាទុកការកំណត់ហាង (Save Settings)
                 </button>
               </div>
             </form>
+          )}
+
+          {/* TAB 4: HOMEPAGE BANNERS & IMAGES */}
+          {activeTab === 'banners' && (
+            <div className="space-y-6 max-w-4xl mx-auto text-xs">
+              {saveToast && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-2 font-bold animate-in fade-in">
+                  <Check className="w-4 h-4" />
+                  <span>បានផ្លាស់ប្តូររូបភាពទំព័រដើមដោយជោគជ័យ!</span>
+                </div>
+              )}
+
+              <div className="border-b border-neutral-200 pb-3">
+                <h3 className="font-bold text-base text-neutral-900">
+                  គ្រប់គ្រងរូបភាពនៅលើ Homepage (ដោយមិនបាច់សរសេរកូដ)
+                </h3>
+                <p className="text-neutral-500 font-khmer mt-0.5">
+                  អ្នកអាចជ្រើសរើសរូបភាពពីទូរស័ព្ទ ឬកុំព្យូទ័រ (Choose File) ឬបិទភ្ជាប់ Link រូបភាព។ រូបភាពនៅលើ Homepage នឹងផ្លាស់ប្តូរភ្លាមៗ!
+                </p>
+              </div>
+
+              {/* 1. Hero Campaign Image */}
+              <div className="p-4 sm:p-5 bg-neutral-50 border border-neutral-200 rounded-2xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm text-neutral-900">
+                      ១. រូបភាព Hero Banner ធំនៅទំព័រដើម (Main Campaign Photo)
+                    </h4>
+                    <span className="text-neutral-500 text-[11px] font-khmer">
+                      បង្ហាញនៅផ្នែកខាងស្តាំនៃ Hero Banner
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleBannerUrlChange(
+                        'heroBannerImage',
+                        '/src/assets/images/hero_athlete_light_1791255981071.jpg'
+                      )
+                    }
+                    className="text-[11px] font-bold text-neutral-600 hover:text-black bg-white border border-neutral-200 px-2.5 py-1 rounded-lg cursor-pointer"
+                  >
+                    Reset រូបដើម
+                  </button>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 items-start">
+                  {/* Current Photo Preview */}
+                  <div className="w-32 aspect-[3/4] bg-neutral-200 rounded-xl overflow-hidden border border-neutral-300 shrink-0 shadow-xs">
+                    <img
+                      src={
+                        settingsForm.heroBannerImage ||
+                        '/src/assets/images/hero_athlete_light_1791255981071.jpg'
+                      }
+                      alt="Hero Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex-1 space-y-3 w-full">
+                    {/* Upload File */}
+                    <div className="p-3 bg-white border border-neutral-200 rounded-xl space-y-1">
+                      <span className="font-bold text-neutral-800 block text-xs">
+                        Upload រូបថតថ្មីពីទូរស័ព្ទ ឬកុំព្យូទ័រ
+                      </span>
+                      <label className="block w-full py-2.5 px-3 bg-neutral-900 hover:bg-black text-white text-center font-bold rounded-lg cursor-pointer transition-colors text-xs shadow-xs">
+                        <span>ជ្រើសរើសរូបថត (Choose File from Device)</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleBannerUpload('heroBannerImage', e)}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    {/* URL Input */}
+                    <div className="p-3 bg-white border border-neutral-200 rounded-xl space-y-1">
+                      <span className="font-bold text-neutral-800 block text-xs">
+                        ឬបិទភ្ជាប់តំណ Link រូបភាព (Image URL)
+                      </span>
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          placeholder="https://example.com/banner.jpg"
+                          defaultValue={settingsForm.heroBannerImage || ''}
+                          onBlur={(e) => {
+                            if (e.target.value.trim()) {
+                              handleBannerUrlChange('heroBannerImage', e.target.value.trim());
+                            }
+                          }}
+                          className="flex-1 px-3 py-1.5 bg-neutral-50 border border-neutral-300 rounded-lg text-xs text-neutral-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Four Category Cards */}
+              <div className="space-y-3 pt-2">
+                <h4 className="font-bold text-sm text-neutral-900">
+                  ២. រូបភាពកាត Collection ទាំង ៤ នៅលើ Homepage (Category Cards)
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Card 1: Football Boots */}
+                  <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-neutral-900">
+                        កាតស្បែកជើងបាល់ទាត់ (Football Boots)
+                      </span>
+                    </div>
+
+                    <div className="flex gap-3 items-center">
+                      <div className="w-20 h-24 bg-neutral-200 rounded-lg overflow-hidden border border-neutral-300 shrink-0">
+                        <img
+                          src={
+                            settingsForm.categoryBootsImage ||
+                            '/src/assets/images/cat_football_boots_1791255998020.jpg'
+                          }
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <label className="block w-full py-2 px-2 bg-neutral-900 hover:bg-black text-white text-center font-bold rounded-lg cursor-pointer text-xs">
+                          <span>Upload រូបថតថ្មី</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleBannerUpload('categoryBootsImage', e)}
+                            className="hidden"
+                          />
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="Image URL..."
+                          defaultValue={settingsForm.categoryBootsImage || ''}
+                          onBlur={(e) => {
+                            if (e.target.value.trim()) {
+                              handleBannerUrlChange('categoryBootsImage', e.target.value.trim());
+                            }
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Match Jerseys */}
+                  <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-neutral-900">
+                        កាតអាវកីឡា (Match Kits & Polos)
+                      </span>
+                    </div>
+
+                    <div className="flex gap-3 items-center">
+                      <div className="w-20 h-24 bg-neutral-200 rounded-lg overflow-hidden border border-neutral-300 shrink-0">
+                        <img
+                          src={
+                            settingsForm.categoryJerseysImage ||
+                            '/src/assets/images/cat_match_jerseys_1791256009910.jpg'
+                          }
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <label className="block w-full py-2 px-2 bg-neutral-900 hover:bg-black text-white text-center font-bold rounded-lg cursor-pointer text-xs">
+                          <span>Upload រូបថតថ្មី</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleBannerUpload('categoryJerseysImage', e)}
+                            className="hidden"
+                          />
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="Image URL..."
+                          defaultValue={settingsForm.categoryJerseysImage || ''}
+                          onBlur={(e) => {
+                            if (e.target.value.trim()) {
+                              handleBannerUrlChange('categoryJerseysImage', e.target.value.trim());
+                            }
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Socks & Accessories */}
+                  <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-neutral-900">
+                        កាតស្រោមជើង & សម្ភារៈ (Pro Accessories)
+                      </span>
+                    </div>
+
+                    <div className="flex gap-3 items-center">
+                      <div className="w-20 h-24 bg-neutral-200 rounded-lg overflow-hidden border border-neutral-300 shrink-0">
+                        <img
+                          src={
+                            settingsForm.categorySocksImage ||
+                            '/src/assets/images/cat_accessories_gear_1791256021862.jpg'
+                          }
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <label className="block w-full py-2 px-2 bg-neutral-900 hover:bg-black text-white text-center font-bold rounded-lg cursor-pointer text-xs">
+                          <span>Upload រូបថតថ្មី</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleBannerUpload('categorySocksImage', e)}
+                            className="hidden"
+                          />
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="Image URL..."
+                          defaultValue={settingsForm.categorySocksImage || ''}
+                          onBlur={(e) => {
+                            if (e.target.value.trim()) {
+                              handleBannerUrlChange('categorySocksImage', e.target.value.trim());
+                            }
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Sport Travel Bags */}
+                  <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-neutral-900">
+                        កាតកាតាបកីឡា (Sports Travel Bags)
+                      </span>
+                    </div>
+
+                    <div className="flex gap-3 items-center">
+                      <div className="w-20 h-24 bg-neutral-200 rounded-lg overflow-hidden border border-neutral-300 shrink-0">
+                        <img
+                          src={
+                            settingsForm.categoryBagsImage ||
+                            '/src/assets/images/cat_sport_bags_1791256037463.jpg'
+                          }
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <label className="block w-full py-2 px-2 bg-neutral-900 hover:bg-black text-white text-center font-bold rounded-lg cursor-pointer text-xs">
+                          <span>Upload រូបថតថ្មី</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleBannerUpload('categoryBagsImage', e)}
+                            className="hidden"
+                          />
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="Image URL..."
+                          defaultValue={settingsForm.categoryBagsImage || ''}
+                          onBlur={(e) => {
+                            if (e.target.value.trim()) {
+                              handleBannerUrlChange('categoryBagsImage', e.target.value.trim());
+                            }
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

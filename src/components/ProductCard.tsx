@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Eye, Send, ArrowUpRight } from 'lucide-react';
 import { Currency, Language, Product, StoreSettings } from '../types';
 import { calculateDiscount, formatPrice, getTotalStock } from '../utils/formatters';
 
@@ -9,7 +8,8 @@ interface ProductCardProps {
   language: Language;
   settings: StoreSettings;
   onSelectProduct: (product: Product) => void;
-  onQuickTelegram: (product: Product) => void;
+  onAddToCart?: (product: Product, size: string, quantity: number) => void;
+  onQuickTelegram?: (product: Product, size: string) => void;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -18,167 +18,202 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   language,
   settings,
   onSelectProduct,
+  onAddToCart,
   onQuickTelegram,
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
   const discount = calculateDiscount(product.price, product.salePrice);
+  const activePrice = product.salePrice ?? product.price;
   const totalStock = getTotalStock(product);
   const isOutOfStock = totalStock <= 0;
-  const activePrice = product.salePrice ?? product.price;
 
-  // Secondary image preview on hover if available
-  const displayImage = isHovered && product.images.length > 1 ? product.images[1] : product.images[0];
+  // Selected size for quick actions
+  const firstAvailableSize =
+    product.sizes.find((s) => s.stock > 0)?.size || product.sizes[0]?.size || '';
+  const [selectedQuickSize, setSelectedQuickSize] = useState<string>(firstAvailableSize);
 
   return (
-    <div
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="group relative bg-neutral-900/60 hover:bg-neutral-900 border border-white/[0.06] hover:border-white/[0.16] rounded-2xl overflow-hidden transition-all duration-300 flex flex-col justify-between"
-    >
-      {/* Product Image Stage */}
+    <div className="group bg-white rounded-xl border border-neutral-200 hover:border-neutral-900 shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden relative">
+      {/* 1. Image Stage with Clean Badges */}
       <div
         onClick={() => onSelectProduct(product)}
-        className="relative aspect-[4/3] bg-neutral-950 overflow-hidden cursor-pointer flex items-center justify-center p-3"
+        className="relative aspect-[4/3] sm:aspect-[1/1] bg-neutral-50 overflow-hidden cursor-pointer"
       >
         <img
-          src={displayImage}
+          src={product.images[0]}
           alt={product.name}
           referrerPolicy="no-referrer"
           loading="lazy"
-          className="w-full h-full object-contain transition-transform duration-500 ease-out group-hover:scale-105"
+          className="w-full h-full object-contain p-3 sm:p-4 transition-transform duration-500 ease-out group-hover:scale-105"
         />
 
-        {/* Minimalist Discount Callout (Zero-Pill: Clean minimal tag) */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1 z-10 pointer-events-none">
+        {/* Top Badges (Clean text tags) */}
+        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 items-start z-10">
           {discount > 0 && (
-            <span className="font-mono text-xs font-bold text-amber-300 bg-neutral-950/80 backdrop-blur-md px-2 py-0.5 rounded border border-amber-400/30">
-              −{discount}%
+            <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-2xs tracking-wider uppercase">
+              -{discount}%
             </span>
           )}
           {product.isNew && (
-            <span className="font-mono text-[10px] tracking-wider text-emerald-400 bg-neutral-950/80 backdrop-blur-md px-2 py-0.5 rounded border border-emerald-500/30 uppercase">
-              New
+            <span className="bg-neutral-900 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-2xs tracking-wider uppercase">
+              NEW
             </span>
           )}
         </div>
 
-        {/* Out of stock minimal scrim */}
+        {/* Brand & Ground Type Badge */}
+        <div className="absolute top-2.5 right-2.5 flex items-center gap-1 z-10">
+          <span className="bg-white/95 text-neutral-800 text-[10px] font-bold px-2 py-0.5 rounded border border-neutral-200">
+            {product.brand}
+          </span>
+          {product.groundType && (
+            <span className="bg-neutral-900 text-white text-[9px] font-mono px-1.5 py-0.5 rounded">
+              {product.groundType.split(' ')[0]}
+            </span>
+          )}
+        </div>
+
+        {/* Out of Stock Overlay */}
         {isOutOfStock && (
-          <div className="absolute inset-0 bg-neutral-950/75 backdrop-blur-[2px] flex items-center justify-center">
-            <span className="font-mono text-xs font-bold text-neutral-400 uppercase tracking-widest px-3 py-1 bg-neutral-900/90 border border-white/10 rounded">
-              {language === 'km' ? 'អស់ស្តុក' : 'Sold Out'}
+          <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-[2px] flex items-center justify-center z-20">
+            <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded uppercase tracking-wider">
+              {language === 'km' ? 'ដាច់ស្តុក' : 'Out of Stock'}
             </span>
           </div>
         )}
 
-        {/* Brand Kicker corner */}
-        <div className="absolute bottom-2.5 right-2.5 text-[10px] font-mono tracking-widest text-neutral-500 uppercase bg-neutral-950/70 px-1.5 py-0.5 rounded backdrop-blur-xs">
-          {product.brand}
+        {/* Quick View Hover Button (Normal clean text) */}
+        <div className="absolute inset-x-0 bottom-2.5 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectProduct(product);
+            }}
+            className="bg-neutral-900 hover:bg-black text-white text-xs font-bold px-4 py-1.5 rounded-lg shadow-md cursor-pointer"
+          >
+            <span>{language === 'km' ? 'មើលលម្អិត' : 'View Details'}</span>
+          </button>
         </div>
       </div>
 
-      {/* Card Content & Details */}
-      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
-        <div className="space-y-1.5">
-          {/* Unboxed Metadata Kicker (Category · Ground Type) */}
-          <div className="flex items-center gap-1.5 text-[11px] font-mono text-neutral-400 uppercase tracking-wider">
-            <span>{product.brand}</span>
-            <span aria-hidden="true" className="text-neutral-600">·</span>
-            <span>{language === 'km' ? product.categoryKm || product.category : product.category}</span>
-            {product.groundType && (
-              <>
-                <span aria-hidden="true" className="text-neutral-600">·</span>
-                <span className="text-amber-400/90">{product.groundType}</span>
-              </>
-            )}
+      {/* 2. Product Info */}
+      <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-3 bg-white">
+        <div>
+          {/* Category kicker */}
+          <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-0.5">
+            {product.categoryKm && language === 'km' ? product.categoryKm : product.category}
           </div>
 
-          {/* Product Name */}
+          {/* Product Title */}
           <h3
             onClick={() => onSelectProduct(product)}
-            className="font-bold text-sm sm:text-base text-neutral-100 group-hover:text-amber-300 transition-colors cursor-pointer line-clamp-1 leading-snug"
-            title={product.name}
+            className="font-display font-bold text-xs sm:text-sm text-neutral-900 line-clamp-2 hover:text-red-600 transition-colors cursor-pointer leading-snug"
           >
-            {product.name}
+            {language === 'km' && product.nameKm ? product.nameKm : product.name}
           </h3>
 
-          {/* Khmer Subtitle if present */}
-          {language === 'km' && product.nameKm && (
-            <p className="text-[11px] text-neutral-400 line-clamp-1 font-khmer">
-              {product.nameKm}
-            </p>
-          )}
-
-          {/* Size Availability Micro-strip */}
-          <div className="pt-2 flex items-center justify-between text-[11px]">
-            <span className="text-neutral-500 font-mono text-[10px]">
-              {language === 'km' ? 'ទំហំ Size:' : 'Sizes:'}
+          {/* Price Block: Dual Currency & Discount */}
+          <div className="mt-2 flex items-baseline flex-wrap gap-x-2 gap-y-0.5">
+            <span className="font-display font-black text-base sm:text-lg text-neutral-950 tabular-nums">
+              {formatPrice(activePrice, currency, settings.exchangeRate)}
             </span>
-            <div className="flex items-center gap-1 overflow-x-auto max-w-[170px] scrollbar-none">
-              {product.sizes.slice(0, 5).map((s) => (
-                <span
-                  key={s.size}
-                  className={`font-mono text-[10px] px-1 rounded ${
-                    s.stock > 0
-                      ? 'text-neutral-300 bg-neutral-800'
-                      : 'text-neutral-600 line-through'
-                  }`}
-                  title={`Size ${s.size}: ${s.stock} in stock`}
-                >
-                  {s.size}
-                </span>
-              ))}
-              {product.sizes.length > 5 && (
-                <span className="text-neutral-500 text-[10px] font-mono">+</span>
-              )}
-            </div>
+
+            {discount > 0 && (
+              <span className="text-xs text-neutral-400 line-through tabular-nums font-medium">
+                {formatPrice(product.price, currency, settings.exchangeRate)}
+              </span>
+            )}
+
+            {/* Equivalent Price in other currency */}
+            <span className="text-[11px] font-semibold text-neutral-500 tabular-nums">
+              (
+              {currency === 'USD'
+                ? formatPrice(activePrice, 'KHR', settings.exchangeRate)
+                : formatPrice(activePrice, 'USD', settings.exchangeRate)}
+              )
+            </span>
           </div>
         </div>
 
-        {/* Pricing & Order Actions */}
-        <div className="pt-3 border-t border-white/[0.06] space-y-3">
-          <div className="flex items-baseline justify-between">
-            <div className="flex items-baseline gap-2">
-              <span className="font-athletic text-2xl font-bold tracking-tight text-white tabular-nums">
-                {formatPrice(activePrice, currency, settings.exchangeRate)}
-              </span>
-              {discount > 0 && (
-                <span className="text-xs font-mono text-neutral-500 line-through tabular-nums">
-                  {formatPrice(product.price, currency, settings.exchangeRate)}
-                </span>
-              )}
-            </div>
-
-            <span className="font-mono text-[11px] text-neutral-500 tabular-nums">
-              {currency === 'USD'
-                ? `៛${Math.round(activePrice * settings.exchangeRate).toLocaleString()}`
-                : `$${activePrice.toFixed(2)}`}
+        {/* 3. Sizes & Stock Indicators (Clean text) */}
+        <div className="pt-2 border-t border-neutral-100 space-y-1.5">
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="font-semibold text-neutral-600">
+              {language === 'km' ? 'ទំហំ (Sizes):' : 'Available Sizes:'}
+            </span>
+            <span
+              className={`font-bold ${
+                isOutOfStock
+                  ? 'text-red-600'
+                  : totalStock <= 3
+                  ? 'text-amber-600'
+                  : 'text-emerald-700'
+              }`}
+            >
+              {isOutOfStock
+                ? language === 'km'
+                  ? 'ដាច់ស្តុក'
+                  : 'Out of Stock'
+                : language === 'km'
+                ? `សល់ ${totalStock}`
+                : `Stock: ${totalStock}`}
             </span>
           </div>
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => onSelectProduct(product)}
-              className="py-2 px-3 rounded-xl bg-neutral-800/80 hover:bg-neutral-800 text-neutral-200 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Eye className="w-3.5 h-3.5 text-neutral-400" />
-              <span>{language === 'km' ? 'មើលលម្អិត' : 'Details'}</span>
-            </button>
+          {/* Size Pills Strip (Clean normal text) */}
+          <div className="flex flex-wrap gap-1">
+            {product.sizes.map((sz) => {
+              const inStock = sz.stock > 0;
+              const isSelected = selectedQuickSize === sz.size;
 
-            <button
-              onClick={() => onQuickTelegram(product)}
-              disabled={isOutOfStock}
-              className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                isOutOfStock
-                  ? 'bg-neutral-850 text-neutral-600 cursor-not-allowed border border-white/[0.04]'
-                  : 'bg-white hover:bg-neutral-200 text-neutral-950 font-bold shadow-sm'
-              }`}
-            >
-              <Send className="w-3.5 h-3.5 text-sky-600" />
-              <span>{language === 'km' ? 'Chat កុម្ម៉ង់' : 'Order'}</span>
-            </button>
+              return (
+                <button
+                  key={sz.size}
+                  onClick={() => inStock && setSelectedQuickSize(sz.size)}
+                  disabled={!inStock}
+                  className={`px-1.5 py-0.5 rounded text-[11px] font-mono font-medium transition-all border cursor-pointer ${
+                    !inStock
+                      ? 'bg-neutral-100 text-neutral-400 border-neutral-200 line-through cursor-not-allowed'
+                      : isSelected
+                      ? 'bg-neutral-900 text-white border-neutral-900 font-bold'
+                      : 'bg-neutral-50 text-neutral-700 border-neutral-200 hover:border-neutral-400'
+                  }`}
+                >
+                  <span>{sz.size}</span>
+                  {inStock && (
+                    <span className="text-[9px] opacity-75 ml-0.5">({sz.stock})</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
+        </div>
+
+        {/* 4. Action Buttons: Normal clean text, no icons */}
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          {/* Telegram Chat to Order Button */}
+          <button
+            onClick={() => onQuickTelegram && onQuickTelegram(product, selectedQuickSize)}
+            disabled={isOutOfStock}
+            className={`w-full py-2 px-2 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+              isOutOfStock
+                ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                : 'bg-sky-500 hover:bg-sky-600 text-white active:scale-95'
+            }`}
+          >
+            <span className="truncate">
+              {language === 'km' ? 'កុម្ម៉ង់ Telegram' : 'Order Telegram'}
+            </span>
+          </button>
+
+          {/* View Details Button */}
+          <button
+            onClick={() => onSelectProduct(product)}
+            className="w-full py-2 px-2 rounded-lg text-xs font-bold bg-neutral-900 hover:bg-neutral-800 text-white transition-all text-center active:scale-95 cursor-pointer"
+          >
+            <span className="truncate">
+              {language === 'km' ? 'មើលលម្អិត' : 'View Details'}
+            </span>
+          </button>
         </div>
       </div>
     </div>

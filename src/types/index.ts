@@ -21,7 +21,13 @@ export interface Product {
   isNew?: boolean;
   sku: string;
   color?: string;
+  colorVariants?: Array<{ name: string; hex: string }>;
   groundType?: string; // e.g. FG, AG, TF, IC
+  rating?: number;
+  reviewsCount?: number;
+  subtitle?: string;
+  features?: string[];
+  macroImage?: string;
   createdAt?: string;
 }
 
@@ -35,7 +41,7 @@ export interface Category {
 export interface StoreSettings {
   storeName: string;
   tagline: string;
-  telegramUsername: string; // e.g. homesportkh
+  telegramUsername: string; // e.g. doublenin
   facebookPage: string; // e.g. homesportcambodia
   phone: string; // e.g. +855 96 888 9999
   exchangeRate: number; // 1 USD = 4100 KHR
@@ -43,6 +49,13 @@ export interface StoreSettings {
   addressEn: string;
   deliveryInfoKm: string;
   deliveryInfoEn: string;
+  adminPin?: string; // Secret PIN to protect Admin dashboard
+  // Homepage Banners & Photos
+  heroBannerImage?: string;
+  categoryBootsImage?: string;
+  categoryJerseysImage?: string;
+  categorySocksImage?: string;
+  categoryBagsImage?: string;
 }
 
 export interface CartItem {

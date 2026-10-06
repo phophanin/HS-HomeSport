@@ -1,94 +1,135 @@
 import React from 'react';
-import { ArrowRight, Send, ShieldCheck, Truck } from 'lucide-react';
 import { Language, StoreSettings } from '../types';
 
 interface HeroBannerProps {
   language: Language;
   onExploreClick: () => void;
-  productCount: number;
   settings: StoreSettings;
 }
 
 export const HeroBanner: React.FC<HeroBannerProps> = ({
   language,
   onExploreClick,
-  productCount,
   settings,
 }) => {
   return (
-    <section className="relative overflow-hidden bg-neutral-950 border-b border-white/[0.08]">
-      {/* Cinematic Background with Measured Scrim */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="/src/assets/images/hero_football_boot_1791205260989.jpg"
-          alt="HOME SPORT Elite Football Campaign"
-          referrerPolicy="no-referrer"
-          className="w-full h-full object-cover object-center opacity-45 scale-105 transition-transform duration-1000 ease-out"
-        />
-        {/* Measured Vignette Scrim */}
-        <div className="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-950/85 to-neutral-950/40" />
-        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-neutral-950/60" />
-      </div>
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-4">
+      {/* Container with light rounded canvas */}
+      <div className="bg-[#f4f4f2] rounded-3xl overflow-hidden border border-neutral-200/60 p-6 sm:p-10 lg:p-12 relative shadow-xs">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Left Column: Headline & Action Buttons */}
+          <div className="lg:col-span-5 space-y-6 z-10">
+            {/* Pill Tag */}
+            <div className="inline-block bg-white/90 border border-neutral-200/80 rounded-full px-3.5 py-1 text-[11px] font-semibold text-neutral-700 uppercase tracking-wider shadow-xs">
+              {language === 'km' ? 'ការប្រមូលផ្តុំពិសេស · 2024/25' : 'PREMIUM COLLECTION'}
+            </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24 lg:py-28">
-        <div className="max-w-2xl space-y-6">
-          {/* Subtle Editorial Kicker */}
-          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-amber-400">
-            <span>Official 2024/25 Catalog</span>
-            <span aria-hidden="true" className="text-neutral-600">/</span>
-            <span>Phnom Penh, Cambodia</span>
+            {/* Giant Bold Headline */}
+            <h1 className="font-athletic text-4xl sm:text-5xl lg:text-6xl font-bold uppercase text-[#141513] tracking-tight leading-[0.95] text-balance">
+              {language === 'km' ? (
+                <>
+                  ឈុតកីឡា & ស្បែកជើង <br />
+                  សម្រាប់ជ័យជម្នះ
+                </>
+              ) : (
+                <>
+                  MATCHDAY KIT <br />
+                  FOR VICTORY
+                </>
+              )}
+            </h1>
+
+            {/* Subtitle Description */}
+            <p className="text-sm text-neutral-600 leading-relaxed font-khmer max-w-md">
+              {language === 'km'
+                ? 'ឧបករណ៍កីឡាអាជីព ផលិតឡើងសម្រាប់ប្រសិទ្ធភាពខ្ពស់បំផុត ស្ទុះលឿន និងផាសុកភាពលើគ្រប់ទីលានប្រកួត។'
+                : 'Professional athletic sportswear engineered for maximum performance, agility, and dominance on every pitch.'}
+            </p>
+
+            {/* Action Buttons (Clean normal text) */}
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              <button
+                onClick={onExploreClick}
+                className="px-6 py-3.5 bg-neutral-900 hover:bg-black text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all cursor-pointer"
+              >
+                <span>{language === 'km' ? 'មើលទំនិញទាំងអស់' : 'Shop Collection'}</span>
+              </button>
+
+              <a
+                href={`https://t.me/${settings.telegramUsername.replace('@', '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs sm:text-sm font-bold text-neutral-700 hover:text-black transition-colors underline-offset-4 hover:underline cursor-pointer"
+              >
+                {language === 'km' ? 'កុម្ម៉ង់តាម Telegram' : 'Direct Telegram'}
+              </a>
+            </div>
+
+            {/* Slide Pagination Indicator */}
+            <div className="pt-4 flex items-center gap-3 text-xs font-mono text-neutral-400">
+              <span className="text-black font-bold">01</span>
+              <span>02</span>
+              <span>03</span>
+            </div>
           </div>
 
-          {/* Headline with text-wrap balance */}
-          <h1 className="font-athletic text-4xl sm:text-6xl lg:text-7xl font-bold uppercase text-white tracking-tight leading-[0.95] text-balance">
-            Precision Gear. <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-200 to-white">
-              Matchday Ready.
-            </span>
-          </h1>
-
-          {/* Subtitle in clean prose */}
-          <p className="text-sm sm:text-base text-neutral-300 leading-relaxed font-khmer max-w-xl">
-            {language === 'km'
-              ? 'កាតាឡុកស្បែកជើងបាល់ទាត់ អាវកីឡាឈុតក្លឹប ខោ និងសម្ភារៈកីឡាគុណភាពខ្ពស់ ពិនិត្យ Size និង Stock ផ្ទាល់ រួចចុច Chat កុម្ម៉ង់តាម Telegram ភ្លាមៗ។'
-              : 'Authentic football boots, club jerseys, and performance technical gear with real-time size availability. Connect directly via Telegram for instant orders.'}
-          </p>
-
-          {/* Direct Actions */}
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <button
-              onClick={onExploreClick}
-              className="px-6 py-3 bg-white hover:bg-neutral-200 text-neutral-950 font-athletic text-base font-bold tracking-wider uppercase rounded-full shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
-            >
-              <span>{language === 'km' ? 'ចូលមើលកាតាឡុក' : 'Explore Collection'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <a
-              href={`https://t.me/${settings.telegramUsername.replace('@', '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-5 py-3 bg-neutral-900/90 hover:bg-neutral-800 text-white border border-white/10 hover:border-white/20 rounded-full font-athletic text-base tracking-wider uppercase transition-all flex items-center gap-2"
-            >
-              <Send className="w-4 h-4 text-sky-400" />
-              <span>Telegram Chat</span>
-            </a>
+          {/* Center Column: Athlete Photo with Bag */}
+          <div className="lg:col-span-4 relative flex items-center justify-center">
+            <div className="relative w-full max-w-sm aspect-[3/4] rounded-2xl overflow-hidden shadow-xs border border-white/60">
+              <img
+                src={settings.heroBannerImage || '/src/assets/images/hero_athlete_light_1791255981071.jpg'}
+                alt="HOME SPORT Athlete Campaign"
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover object-top"
+              />
+            </div>
           </div>
 
-          {/* Trust Metrics Adjacency (Zero-Pill, Typographic Separators) */}
-          <div className="pt-6 border-t border-white/[0.08] flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-neutral-400 font-medium">
-            <div className="flex items-center gap-2 text-neutral-200">
-              <ShieldCheck className="w-4 h-4 text-amber-400" />
-              <span>100% Genuine Athletic Equipment</span>
+          {/* Far Right Column: 3 Clean Typography Trust Cards (No icons) */}
+          <div className="lg:col-span-3 space-y-3">
+            {/* Card 1: Free Delivery */}
+            <div className="p-4 bg-white rounded-2xl border border-neutral-200/80 shadow-xs flex items-start gap-3.5 hover:border-neutral-300 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-900 font-mono font-bold text-xs shrink-0">
+                01
+              </div>
+              <div className="text-xs">
+                <div className="font-bold text-neutral-900 leading-tight">
+                  {language === 'km' ? 'ដឹកជញ្ជូនរហ័ស' : 'Fast Delivery'}
+                </div>
+                <div className="text-neutral-500 text-[11px] mt-0.5 font-khmer">
+                  {language === 'km' ? 'ទូទាំង ២៥ ខេត្ត-ក្រុង' : 'Across 25 provinces'}
+                </div>
+              </div>
             </div>
-            <span aria-hidden="true" className="text-neutral-700 hidden sm:inline">·</span>
-            <div className="flex items-center gap-2 text-neutral-200">
-              <Truck className="w-4 h-4 text-amber-400" />
-              <span>{language === 'km' ? 'ដឹកជញ្ជូនរហ័ស ២៥ ខេត្ត-ក្រុង' : '25 Provinces Fast Delivery'}</span>
+
+            {/* Card 2: Size Trial */}
+            <div className="p-4 bg-white rounded-2xl border border-neutral-200/80 shadow-xs flex items-start gap-3.5 hover:border-neutral-300 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-900 font-mono font-bold text-xs shrink-0">
+                02
+              </div>
+              <div className="text-xs">
+                <div className="font-bold text-neutral-900 leading-tight">
+                  {language === 'km' ? 'សាកល្បង Size' : 'Size Exchange'}
+                </div>
+                <div className="text-neutral-500 text-[11px] mt-0.5 font-khmer">
+                  {language === 'km' ? 'ប្តូរបានក្នុងរយៈពេល ៣ ថ្ងៃ' : 'Exchange within 3 days'}
+                </div>
+              </div>
             </div>
-            <span aria-hidden="true" className="text-neutral-700 hidden sm:inline">·</span>
-            <div className="font-mono text-neutral-400">
-              {productCount} {language === 'km' ? 'ទំនិញក្នុងស្តុក' : 'Curated Items'}
+
+            {/* Card 3: 100% Original */}
+            <div className="p-4 bg-white rounded-2xl border border-neutral-200/80 shadow-xs flex items-start gap-3.5 hover:border-neutral-300 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-900 font-mono font-bold text-xs shrink-0">
+                03
+              </div>
+              <div className="text-xs">
+                <div className="font-bold text-neutral-900 leading-tight">
+                  {language === 'km' ? 'ទំនិញសុទ្ធ ១០០%' : '100% Original Gear'}
+                </div>
+                <div className="text-neutral-500 text-[11px] mt-0.5 font-khmer">
+                  {language === 'km' ? 'ធានាគុណភាពផ្លូវការ' : 'Guaranteed performance'}
+                </div>
+              </div>
             </div>
           </div>
         </div>

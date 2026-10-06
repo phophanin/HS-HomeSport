@@ -2,31 +2,38 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   DEFAULT_PRODUCTS,
   DEFAULT_STORE_SETTINGS,
+  CATEGORIES,
 } from './data/defaultProducts';
 import { Product, StoreSettings, CartItem, Currency, Language } from './types';
 import { Header } from './components/Header';
 import { HeroBanner } from './components/HeroBanner';
+import { CategoryIconStrip } from './components/CategoryIconStrip';
+import { CategoryBannerGrid } from './components/CategoryBannerGrid';
 import { FilterBar, SortOption } from './components/FilterBar';
 import { ProductCard } from './components/ProductCard';
 import { ProductDetailModal } from './components/ProductDetailModal';
 import { InquiryBagDrawer } from './components/InquiryBagDrawer';
 import { AdminPanelModal } from './components/AdminPanelModal';
+import { AdminPasscodeModal } from './components/AdminPasscodeModal';
+import { ClubBanner } from './components/ClubBanner';
 import { Footer } from './components/Footer';
 import {
-  calculateDiscount,
   generateSingleOrderMessage,
   getTelegramOrderUrl,
   getTotalStock,
 } from './utils/formatters';
-import { AlertCircle, ShoppingBag, Send } from 'lucide-react';
+import { ArrowRight, ShoppingBag, Send, Sparkles, RefreshCw, Flame } from 'lucide-react';
 
 export default function App() {
-  // Persistence for products (v2 to load high-res studio assets)
+  // Persistence for products (v6)
   const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem('homesport_products_v2');
+    const saved = localStorage.getItem('homesport_products_v6');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       } catch (e) {
         console.error('Failed to parse saved products', e);
       }
@@ -36,20 +43,27 @@ export default function App() {
 
   // Persistence for store settings
   const [settings, setSettings] = useState<StoreSettings>(() => {
-    const saved = localStorage.getItem('homesport_settings_v2');
+    const saved = localStorage.getItem('homesport_settings_v6');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return {
+          ...parsed,
+          telegramUsername: 'doublenin', // Explicitly guaranteed
+        };
       } catch (e) {
         console.error('Failed to parse saved settings', e);
       }
     }
-    return DEFAULT_STORE_SETTINGS;
+    return {
+      ...DEFAULT_STORE_SETTINGS,
+      telegramUsername: 'doublenin',
+    };
   });
 
   // Persistence for Inquiry Cart Bag
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem('homesport_cart_v2');
+    const saved = localStorage.getItem('homesport_cart_v6');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -64,92 +78,96 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedBrand, setSelectedBrand] = useState('All Brands');
-  const [sortBy, setSortBy] = useState<SortOption>('featured');
   const [inStockOnly, setInStockOnly] = useState(false);
   const [onSaleOnly, setOnSaleOnly] = useState(false);
   const [selectedSize, setSelectedSize] = useState('all');
+  const [sortBy, setSortBy] = useState<SortOption>('featured');
 
   // UI preferences
   const [currency, setCurrency] = useState<Currency>('USD');
-  const [language, setLanguage] = useState<Language>('km');
+  const [language, setLanguage] = useState<Language>('km'); // Default to Khmer as requested
 
   // Modals & Drawers
-  const [detailModalProduct, setDetailModalProduct] = useState<Product | null>(null);
+  const [activeModalProduct, setActiveModalProduct] = useState<Product | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isPasscodeOpen, setIsPasscodeOpen] = useState(false);
 
-  // Catalog container ref for smooth scrolling
+  const handleRequestAdminAccess = () => {
+    setIsPasscodeOpen(true);
+  };
+
   const catalogSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    localStorage.setItem('homesport_products_v2', JSON.stringify(products));
+    localStorage.setItem('homesport_products_v6', JSON.stringify(products));
   }, [products]);
 
   useEffect(() => {
-    localStorage.setItem('homesport_settings_v2', JSON.stringify(settings));
+    localStorage.setItem('homesport_settings_v6', JSON.stringify(settings));
   }, [settings]);
 
   useEffect(() => {
-    localStorage.setItem('homesport_cart_v2', JSON.stringify(cartItems));
+    localStorage.setItem('homesport_cart_v6', JSON.stringify(cartItems));
   }, [cartItems]);
 
-  // Compute all available unique sizes across the catalog for quick filter
+  // Extract all unique sizes across catalog for size filter pills
   const availableSizes = useMemo(() => {
     const sizeSet = new Set<string>();
     products.forEach((p) => {
-      p.sizes.forEach((s) => {
-        if (s.stock > 0) {
-          sizeSet.add(s.size);
-        }
-      });
+      p.sizes.forEach((s) => sizeSet.add(s.size));
     });
     return Array.from(sizeSet).sort((a, b) => {
-      const numA = parseFloat(a);
-      const numB = parseFloat(b);
-      if (!isNaN(numA) && !isNaN(numB)) {
-        return numA - numB;
-      }
+      const numA = parseInt(a, 10);
+      const numB = parseInt(b, 10);
+      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
       return a.localeCompare(b);
     });
   }, [products]);
 
-  // Filter & Sort Logic
+  // Filtered & Sorted products list
   const filteredProducts = useMemo(() => {
     return products
-      .filter((p) => {
+      .filter((product) => {
+        // Search Filter (checks title in English, title in Khmer, brand, sku, description)
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase().trim();
-          const matchName = p.name.toLowerCase().includes(q);
-          const matchKm = p.nameKm?.toLowerCase().includes(q) || false;
-          const matchBrand = p.brand.toLowerCase().includes(q);
-          const matchCat = p.category.toLowerCase().includes(q);
-          const matchSku = p.sku.toLowerCase().includes(q);
-          const matchDesc = p.description.toLowerCase().includes(q);
-          if (!matchName && !matchKm && !matchBrand && !matchCat && !matchSku && !matchDesc) {
+          const matchName = product.name.toLowerCase().includes(q);
+          const matchNameKm = product.nameKm?.toLowerCase().includes(q);
+          const matchBrand = product.brand.toLowerCase().includes(q);
+          const matchSku = product.sku.toLowerCase().includes(q);
+          const matchCategory = product.category.toLowerCase().includes(q);
+          if (!matchName && !matchNameKm && !matchBrand && !matchSku && !matchCategory) {
             return false;
           }
         }
 
-        if (selectedCategory !== 'all') {
-          if (p.category !== selectedCategory) return false;
+        // Category Filter
+        if (selectedCategory !== 'all' && product.category !== selectedCategory) {
+          return false;
         }
 
-        if (selectedBrand !== 'All Brands') {
-          if (p.brand !== selectedBrand) return false;
+        // Brand Filter
+        if (selectedBrand !== 'All Brands' && product.brand !== selectedBrand) {
+          return false;
         }
 
-        if (inStockOnly) {
-          if (getTotalStock(p) <= 0) return false;
+        // In-Stock Only Filter
+        if (inStockOnly && getTotalStock(product) <= 0) {
+          return false;
         }
 
-        if (onSaleOnly) {
-          const discount = calculateDiscount(p.price, p.salePrice);
-          if (discount <= 0) return false;
+        // Sale Only Filter
+        if (onSaleOnly && (!product.salePrice || product.salePrice >= product.price)) {
+          return false;
         }
 
+        // Specific Size Filter
         if (selectedSize !== 'all') {
-          const matchingSizeObj = p.sizes.find((s) => s.size === selectedSize);
-          if (!matchingSizeObj || matchingSizeObj.stock <= 0) return false;
+          const hasSizeInStock = product.sizes.some(
+            (s) => s.size === selectedSize && s.stock > 0
+          );
+          if (!hasSizeInStock) return false;
         }
 
         return true;
@@ -158,43 +176,38 @@ export default function App() {
         const priceA = a.salePrice ?? a.price;
         const priceB = b.salePrice ?? b.price;
 
-        switch (sortBy) {
-          case 'price-asc':
-            return priceA - priceB;
-          case 'price-desc':
-            return priceB - priceA;
-          case 'discount':
-            return calculateDiscount(b.price, b.salePrice) - calculateDiscount(a.price, a.salePrice);
-          case 'newest':
-            return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
-          case 'featured':
-          default:
-            return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
+        if (sortBy === 'price-asc') return priceA - priceB;
+        if (sortBy === 'price-desc') return priceB - priceA;
+        if (sortBy === 'discount') {
+          const discA = a.salePrice ? (a.price - a.salePrice) / a.price : 0;
+          const discB = b.salePrice ? (b.price - b.salePrice) / b.price : 0;
+          return discB - discA;
         }
+        if (sortBy === 'newest') {
+          return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
+        }
+        // Default: featured
+        return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
       });
   }, [
     products,
     searchQuery,
     selectedCategory,
     selectedBrand,
-    sortBy,
     inStockOnly,
     onSaleOnly,
     selectedSize,
+    sortBy,
   ]);
 
-  // Featured selection for homepage anchor
-  const featuredProducts = useMemo(() => {
-    return products.filter((p) => p.isFeatured || p.isTrending).slice(0, 4);
-  }, [products]);
-
   const hasActiveFilters =
-    searchQuery !== '' ||
+    searchQuery.trim() !== '' ||
     selectedCategory !== 'all' ||
     selectedBrand !== 'All Brands' ||
     inStockOnly ||
     onSaleOnly ||
-    selectedSize !== 'all';
+    selectedSize !== 'all' ||
+    sortBy !== 'featured';
 
   const handleResetFilters = () => {
     setSearchQuery('');
@@ -206,16 +219,12 @@ export default function App() {
     setSortBy('featured');
   };
 
-  const handleShopNowClick = () => {
+  const scrollToCatalog = () => {
     catalogSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleQuickTelegram = (product: Product) => {
-    const availableSize =
-      product.sizes.find((s) => s.stock > 0)?.size || product.sizes[0]?.size || 'Standard';
-    const message = generateSingleOrderMessage(product, availableSize, 1, settings);
-    const url = getTelegramOrderUrl(settings.telegramUsername, message);
-    window.open(url, '_blank');
+  const handleSelectProduct = (product: Product) => {
+    setActiveModalProduct(product);
   };
 
   const handleAddToCart = (product: Product, size: string, quantity: number) => {
@@ -231,6 +240,13 @@ export default function App() {
       }
       return [...prev, { id: itemId, product, selectedSize: size, quantity }];
     });
+  };
+
+  // Direct order via Telegram (@doublenin)
+  const handleDirectTelegramOrder = (product: Product, size: string) => {
+    const message = generateSingleOrderMessage(product, size, 1, settings);
+    const url = getTelegramOrderUrl(settings.telegramUsername, message);
+    window.open(url, '_blank');
   };
 
   const handleUpdateCartQuantity = (id: string, newQuantity: number) => {
@@ -253,193 +269,187 @@ export default function App() {
 
   const totalCartItemCount = cartItems.reduce((acc, curr) => acc + curr.quantity, 0);
 
+  // Trending / Featured spotlight products
+  const trendingProducts = useMemo(() => {
+    return products.filter((p) => p.isTrending || p.isFeatured).slice(0, 4);
+  }, [products]);
+
   return (
-    <div className="min-h-screen flex flex-col bg-neutral-950 text-neutral-100 font-khmer antialiased selection:bg-amber-400 selection:text-neutral-950">
-      {/* 1. Header (Clean 3-Zone Contract) */}
+    <div className="min-h-screen flex flex-col bg-[#fafaf9] text-neutral-900 font-sans antialiased selection:bg-neutral-900 selection:text-white">
+      {/* 1. Header (Sticky navigation + Announcement + Telegram + Currency & Language switchers) */}
       <Header
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q);
+          if (q.trim()) scrollToCatalog();
+        }}
         currency={currency}
         onCurrencyToggle={() => setCurrency((prev) => (prev === 'USD' ? 'KHR' : 'USD'))}
         language={language}
         onLanguageToggle={() => setLanguage((prev) => (prev === 'km' ? 'en' : 'km'))}
         cartCount={totalCartItemCount}
         onOpenCart={() => setIsCartOpen(true)}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenAdmin={handleRequestAdminAccess}
         settings={settings}
         activeCategory={selectedCategory}
         onSelectCategory={(cat) => {
           setSelectedCategory(cat);
-          handleShopNowClick();
+          scrollToCatalog();
         }}
       />
 
-      {/* 2. Cinematic Hero Banner */}
-      <HeroBanner
-        language={language}
-        onExploreClick={handleShopNowClick}
-        productCount={products.length}
-        settings={settings}
-      />
+      <main className="flex-1">
+        {/* 2. Hero Campaign Banner (Cinematic, Athletic, direct Telegram CTA) */}
+        <HeroBanner
+          language={language}
+          onExploreClick={scrollToCatalog}
+          settings={settings}
+        />
 
-      {/* 3. Refined Interactive Filter Bar */}
-      <FilterBar
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-        selectedBrand={selectedBrand}
-        onSelectBrand={setSelectedBrand}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        inStockOnly={inStockOnly}
-        onToggleInStockOnly={() => setInStockOnly(!inStockOnly)}
-        onSaleOnly={onSaleOnly}
-        onToggleOnSaleOnly={() => setOnSaleOnly(!onSaleOnly)}
-        selectedSize={selectedSize}
-        onSelectSize={setSelectedSize}
-        availableSizes={availableSizes}
-        totalResults={filteredProducts.length}
-        onResetFilters={handleResetFilters}
-        hasActiveFilters={hasActiveFilters}
-        language={language}
-      />
+        {/* 3. Quick Category Icon Strip */}
+        <CategoryIconStrip
+          selectedCategory={selectedCategory}
+          onSelectCategory={(cat) => {
+            setSelectedCategory(cat);
+            scrollToCatalog();
+          }}
+          language={language}
+        />
 
-      {/* Main Content Area */}
-      <main ref={catalogSectionRef} className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-12 w-full">
-        {/* Featured Spotlights (When not filtered) */}
-        {!hasActiveFilters && featuredProducts.length > 0 && (
-          <section className="space-y-5">
-            <div className="flex items-baseline justify-between border-b border-white/[0.06] pb-3">
-              <div>
-                <h2 className="font-athletic text-2xl font-bold tracking-tight text-white uppercase">
-                  {language === 'km' ? 'ទំនិញពេញនិយម (Featured)' : 'Featured Spotlight'}
-                </h2>
-                <p className="text-xs text-neutral-400 font-khmer mt-0.5">
-                  {language === 'km'
-                    ? 'ម៉ូដស្បែកជើង និងអាវកីឡាដែលមានការកុម្ម៉ង់ច្រើនជាងគេប្រចាំសប្តាហ៍'
-                    : 'The most requested boots & sportswear of the week'}
-                </p>
-              </div>
+        {/* 4. Visual 4-Column Feature Category Cards */}
+        <CategoryBannerGrid
+          language={language}
+          onSelectCategory={(cat) => {
+            setSelectedCategory(cat);
+            scrollToCatalog();
+          }}
+          settings={settings}
+        />
 
-              <span className="font-mono text-xs text-neutral-500">
-                04 Items
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-              {featuredProducts.map((product) => (
-                <ProductCard
-                  key={`feat-${product.id}`}
-                  product={product}
-                  currency={currency}
-                  language={language}
-                  settings={settings}
-                  onSelectProduct={setDetailModalProduct}
-                  onQuickTelegram={handleQuickTelegram}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Full Collection Catalog Grid */}
-        <section className="space-y-5">
-          <div className="flex items-baseline justify-between border-b border-white/[0.06] pb-3">
+        {/* 5. Main Catalog Section */}
+        <section ref={catalogSectionRef} className="py-8 scroll-mt-20">
+          {/* Section Header */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-4 flex items-center justify-between">
             <div>
-              <h2 className="font-athletic text-2xl font-bold tracking-tight text-white uppercase">
-                {language === 'km' ? 'កាតាឡុកទំនិញទាំងអស់' : 'All Collection'}
+              <h2 className="font-display font-black text-2xl sm:text-3xl text-neutral-950 uppercase tracking-tight">
+                {selectedCategory === 'all'
+                  ? language === 'km'
+                    ? 'កាតាឡុកទំនិញកីឡាទាំងអស់'
+                    : 'All Sport Products'
+                  : CATEGORIES.find((c) => c.id === selectedCategory)?.nameKm ||
+                    CATEGORIES.find((c) => c.id === selectedCategory)?.name}
               </h2>
-              <p className="text-xs text-neutral-400 font-khmer mt-0.5">
+              <p className="text-xs sm:text-sm text-neutral-600 font-khmer mt-0.5">
                 {language === 'km'
-                  ? 'ពិនិត្យទំហំ និងស្តុកជាក់ស្តែង រួចចុច Chat កុម្ម៉ង់ផ្ទាល់'
-                  : 'Real-time stock verified athletic footwear and gear'}
+                  ? 'ស្វែងរក ជ្រើសរើសទំហំ (Size) និងចុច Chat កុម្ម៉ង់ផ្ទាល់ទៅកាន់ Telegram'
+                  : 'Browse items, check sizes & stock, chat directly to order via Telegram'}
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              {hasActiveFilters && (
-                <button
-                  onClick={handleResetFilters}
-                  className="text-xs text-amber-300 hover:text-white font-medium cursor-pointer"
-                >
-                  {language === 'km' ? 'សម្អាតការស្វែងរក' : 'Clear Filters'}
-                </button>
-              )}
-              <span className="font-mono text-xs text-neutral-500">
-                {filteredProducts.length} Items
-              </span>
-            </div>
-          </div>
-
-          {filteredProducts.length === 0 ? (
-            <div className="py-20 text-center space-y-4 bg-neutral-900/30 rounded-3xl border border-white/[0.06] p-8 max-w-lg mx-auto">
-              <div className="w-12 h-12 rounded-full bg-neutral-850 flex items-center justify-center mx-auto text-neutral-500">
-                <AlertCircle className="w-6 h-6" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-bold text-base text-white">
-                  {language === 'km' ? 'រកមិនឃើញទំនិញដែលត្រូវនឹងការស្វែងរកទេ' : 'No matching items'}
-                </h3>
-                <p className="text-xs text-neutral-400 font-khmer">
-                  {language === 'km'
-                    ? 'សូមសាកល្បងសម្អាតពាក្យស្វែងរក ឬដោះការជ្រើសរើសដើម្បីមើលទំនិញទាំងអស់។'
-                    : 'Try clearing the search query or reset size/brand filters.'}
-                </p>
-              </div>
+            {/* Quick reset if filtered */}
+            {hasActiveFilters && (
               <button
                 onClick={handleResetFilters}
-                className="px-4 py-2 bg-white text-neutral-950 font-athletic text-xs font-bold uppercase rounded-full hover:bg-neutral-200 transition-colors cursor-pointer"
+                className="text-xs text-red-600 hover:text-red-700 font-bold bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
               >
-                {language === 'km' ? 'មើលទំនិញទាំងអស់' : 'Show All Items'}
+                <span>{language === 'km' ? 'ជម្រះការជ្រើសរើស' : 'Reset Filters'}</span>
               </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  currency={currency}
-                  language={language}
-                  settings={settings}
-                  onSelectProduct={setDetailModalProduct}
-                  onQuickTelegram={handleQuickTelegram}
-                />
-              ))}
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Sticky Filter & Sort Toolbar */}
+          <FilterBar
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            selectedBrand={selectedBrand}
+            onSelectBrand={setSelectedBrand}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            inStockOnly={inStockOnly}
+            onToggleInStockOnly={() => setInStockOnly((prev) => !prev)}
+            onSaleOnly={onSaleOnly}
+            onToggleOnSaleOnly={() => setOnSaleOnly((prev) => !prev)}
+            selectedSize={selectedSize}
+            onSelectSize={setSelectedSize}
+            availableSizes={availableSizes}
+            totalResults={filteredProducts.length}
+            onResetFilters={handleResetFilters}
+            hasActiveFilters={hasActiveFilters}
+            language={language}
+          />
+
+          {/* Product Cards Grid */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
+            {filteredProducts.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {filteredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    currency={currency}
+                    language={language}
+                    settings={settings}
+                    onSelectProduct={handleSelectProduct}
+                    onAddToCart={handleAddToCart}
+                    onQuickTelegram={(prod, size) => handleDirectTelegramOrder(prod, size)}
+                  />
+                ))}
+              </div>
+            ) : (
+              /* Empty State */
+              <div className="text-center py-20 bg-white rounded-2xl border border-neutral-200 p-8 shadow-xs max-w-xl mx-auto space-y-4">
+                <h3 className="font-display font-bold text-lg text-neutral-900">
+                  {language === 'km'
+                    ? 'រកមិនឃើញទំនិញដែលត្រូវនឹងការស្វែងរកទេ'
+                    : 'No matching products found'}
+                </h3>
+                <p className="text-xs text-neutral-500 font-khmer max-w-md mx-auto">
+                  {language === 'km'
+                    ? 'សូមព្យាយាមផ្លាស់ប្តូរពាក្យស្វែងរក ឬដក Filter ចេញដើម្បីមើលទំនិញផ្សេងទៀត។'
+                    : 'Try clearing some filters or searching with a different term to explore our sports gear.'}
+                </p>
+                <button
+                  onClick={handleResetFilters}
+                  className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                >
+                  {language === 'km' ? 'បង្ហាញទំនិញទាំងអស់ឡើងវិញ' : 'Show All Products'}
+                </button>
+              </div>
+            )}
+          </div>
         </section>
+
+        {/* 6. Telegram Club & VIP Community Banner */}
+        <ClubBanner language={language} settings={settings} />
       </main>
 
-      {/* Floating Action Buttons for Mobile */}
-      <div className="fixed bottom-5 right-5 z-30 flex flex-col gap-2.5 md:hidden">
+      {/* Floating Action Buttons on Mobile (Clean text buttons) */}
+      <div className="fixed bottom-5 right-5 z-30 flex flex-col gap-2 md:hidden">
         {totalCartItemCount > 0 && (
           <button
             onClick={() => setIsCartOpen(true)}
-            className="w-12 h-12 bg-white text-neutral-950 rounded-full shadow-xl flex items-center justify-center relative cursor-pointer"
-            title="Open Order Bag"
+            className="px-4 py-2.5 bg-neutral-900 text-white rounded-xl shadow-xl flex items-center gap-1.5 text-xs font-bold cursor-pointer active:scale-95"
+            title="Inquiry Bag"
           >
-            <ShoppingBag className="w-5 h-5 text-neutral-950" />
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 text-neutral-950 text-[10px] font-mono font-black rounded-full flex items-center justify-center">
-              {totalCartItemCount}
-            </span>
+            <span>{language === 'km' ? 'កន្ត្រក' : 'Bag'}: {totalCartItemCount}</span>
           </button>
         )}
         <a
           href={`https://t.me/${settings.telegramUsername.replace('@', '')}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-12 h-12 bg-sky-500 hover:bg-sky-400 text-white rounded-full shadow-xl flex items-center justify-center cursor-pointer"
+          className="px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl shadow-xl flex items-center justify-center text-xs font-bold cursor-pointer active:scale-95"
           title="Direct Telegram Chat"
         >
-          <Send className="w-5 h-5" />
+          <span>Telegram</span>
         </a>
       </div>
 
-      {/* Modals & Slide-out Drawers */}
-      {detailModalProduct && (
+      {/* Product Detail Modal */}
+      {activeModalProduct && (
         <ProductDetailModal
-          product={detailModalProduct}
-          onClose={() => setDetailModalProduct(null)}
+          product={activeModalProduct}
+          onClose={() => setActiveModalProduct(null)}
           currency={currency}
           language={language}
           settings={settings}
@@ -447,6 +457,7 @@ export default function App() {
         />
       )}
 
+      {/* Slide-out Inquiry Bag Drawer */}
       <InquiryBagDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
@@ -459,6 +470,19 @@ export default function App() {
         settings={settings}
       />
 
+      {/* Admin Passcode Gatekeeper (Requires Secret PIN) */}
+      <AdminPasscodeModal
+        isOpen={isPasscodeOpen}
+        onClose={() => setIsPasscodeOpen(false)}
+        onSuccess={() => {
+          setIsPasscodeOpen(false);
+          setIsAdminOpen(true);
+        }}
+        settings={settings}
+        language={language}
+      />
+
+      {/* Admin Panel Modal */}
       <AdminPanelModal
         isOpen={isAdminOpen}
         onClose={() => setIsAdminOpen(false)}
@@ -472,7 +496,11 @@ export default function App() {
       <Footer
         settings={settings}
         language={language}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenAdmin={handleRequestAdminAccess}
+        onSelectCategory={(catId) => {
+          setSelectedCategory(catId);
+          scrollToCatalog();
+        }}
       />
     </div>
   );

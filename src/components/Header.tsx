@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Search, ShoppingBag, SlidersHorizontal, Globe, X } from 'lucide-react';
 import { Currency, Language, StoreSettings } from '../types';
 
 interface HeaderProps {
@@ -31,163 +30,194 @@ export const Header: React.FC<HeaderProps> = ({
   activeCategory,
   onSelectCategory,
 }) => {
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { id: 'all', labelEn: 'All Collection', labelKm: 'ទំនិញទាំងអស់' },
-    { id: 'boots', labelEn: 'Boots', labelKm: 'ស្បែកជើង' },
-    { id: 'jerseys', labelEn: 'Jerseys', labelKm: 'អាវកីឡា' },
-    { id: 'shorts', labelEn: 'Shorts', labelKm: 'ខោខ្លី' },
-    { id: 'socks', labelEn: 'Grip Socks', labelKm: 'ស្រោមជើង' },
-    { id: 'gloves', labelEn: 'Gloves & Gear', labelKm: 'សម្ភារៈ' },
+    { id: 'all', labelEn: 'ALL PRODUCTS', labelKm: 'ទំនិញទាំងអស់' },
+    { id: 'boots', labelEn: 'BOOTS', labelKm: 'ស្បែកជើងបាល់ទាត់' },
+    { id: 'jerseys', labelEn: 'JERSEYS', labelKm: 'អាវកីឡា' },
+    { id: 'shorts', labelEn: 'SHORTS', labelKm: 'ខោខ្លី' },
+    { id: 'bags', labelEn: 'BAGS', labelKm: 'កាតាប' },
+    { id: 'socks', labelEn: 'SOCKS & GEAR', labelKm: 'ស្រោមជើង & សម្ភារៈ' },
   ];
 
+  const cleanTelegramUsername = settings.telegramUsername.replace('@', '').trim();
+
   return (
-    <header className="sticky top-0 z-40 bg-neutral-950/90 backdrop-blur-xl border-b border-white/[0.08] transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-18 flex items-center justify-between gap-4">
-        {/* Zone 1: Clean Minimalist Brand Wordmark */}
-        <div className="flex items-center gap-3 shrink-0">
+    <header className="sticky top-0 z-40 bg-white border-b border-neutral-200/90 shadow-2xs transition-all">
+      {/* 1. Top Announcement Bar (Clean normal text, no emojis) */}
+      <div className="bg-neutral-900 text-neutral-200 text-xs py-2 px-4 sm:px-8 border-b border-neutral-800">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          {/* Left: Direct Telegram Link */}
+          <a
+            href={`https://t.me/${cleanTelegramUsername}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sky-400 hover:text-sky-300 font-bold text-xs tracking-wide transition-colors shrink-0"
+            title="Chat on Telegram"
+          >
+            <span>Telegram: @{cleanTelegramUsername}</span>
+          </a>
+
+          {/* Center Announcement (Pure clean text) */}
+          <div className="hidden md:flex flex-1 text-center font-medium items-center justify-center text-xs text-neutral-300 font-khmer">
+            <span>
+              {language === 'km'
+                ? 'HOME SPORT Catalog · ដឹកជញ្ជូនរហ័ស ២៥ ខេត្ត-ក្រុង (ភ្នំពេញ ១-២ ម៉ោង)'
+                : 'HOME SPORT Catalog · Fast Delivery 25 Provinces across Cambodia'}
+            </span>
+          </div>
+
+          {/* Right: Currency & Language Switchers (Clean normal text) */}
+          <div className="flex items-center gap-2.5 shrink-0 text-xs">
+            {/* Language Toggle */}
+            <button
+              onClick={onLanguageToggle}
+              className="text-neutral-300 hover:text-white font-bold transition-colors cursor-pointer bg-neutral-800 hover:bg-neutral-700 px-2.5 py-1 rounded text-xs"
+              title="Change Language"
+            >
+              <span>{language === 'km' ? 'ខ្មែរ' : 'EN'}</span>
+            </button>
+
+            {/* Currency Toggle */}
+            <button
+              onClick={onCurrencyToggle}
+              className="font-bold text-amber-400 hover:text-amber-300 transition-colors cursor-pointer font-mono bg-neutral-800 hover:bg-neutral-700 px-2.5 py-1 rounded text-xs"
+              title="Toggle Currency USD / KHR"
+            >
+              <span>{currency === 'USD' ? '$ USD' : '៛ KHR'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Main Navigation Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
+        {/* Left: Brand Logo Wordmark */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-1 text-xs font-bold text-neutral-800 hover:text-black border border-neutral-300 rounded px-2 py-1 cursor-pointer lg:hidden"
+            title="Menu"
+          >
+            <span>Menu</span>
+          </button>
+
           <a
             href="#"
             onClick={(e) => {
               e.preventDefault();
               onSelectCategory('all');
             }}
-            className="group flex items-center gap-2.5"
+            className="flex items-center gap-2 cursor-pointer select-none"
           >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-400 to-amber-200 text-neutral-950 font-athletic text-lg font-black flex items-center justify-center tracking-tighter shadow-sm group-hover:scale-105 transition-transform">
-              HS
-            </div>
-            <div className="flex flex-col">
-              <span className="font-athletic text-xl font-bold tracking-wider text-white group-hover:text-amber-300 transition-colors uppercase leading-none">
-                HOME<span className="text-amber-400">SPORT</span>
-              </span>
-              <span className="text-[9px] uppercase tracking-widest text-neutral-500 font-medium">
-                Catalog & Direct Order
-              </span>
-            </div>
+            <span className="font-display font-black text-xl sm:text-2xl tracking-tight text-neutral-950 uppercase leading-none">
+              HOME <span className="text-red-600">SPORT</span>
+            </span>
+            <span className="text-[10px] uppercase font-bold tracking-widest text-neutral-500 font-mono hidden sm:inline">
+              CATALOG
+            </span>
           </a>
         </div>
 
-        {/* Zone 2: Clean Typography Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-1.5 text-xs font-medium">
+        {/* Center: Desktop Navigation Links (Normal clean text) */}
+        <nav className="hidden lg:flex items-center gap-6 text-xs font-bold text-neutral-800 tracking-wider">
           {navLinks.map((link) => {
-            const isActive = activeCategory === link.id;
+            const isSelected = activeCategory === link.id;
             return (
               <button
                 key={link.id}
                 onClick={() => onSelectCategory(link.id)}
-                className={`px-3 py-1.5 rounded-full transition-all whitespace-nowrap cursor-pointer ${
-                  isActive
-                    ? 'text-neutral-950 bg-white font-semibold shadow-sm'
-                    : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+                className={`transition-colors py-1 relative cursor-pointer ${
+                  isSelected
+                    ? 'text-neutral-950 font-black'
+                    : 'text-neutral-600 hover:text-neutral-950 font-bold'
                 }`}
               >
-                {language === 'km' ? link.labelKm : link.labelEn}
+                <span>{language === 'km' ? link.labelKm : link.labelEn}</span>
+                {isSelected && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-neutral-950 rounded-full" />
+                )}
               </button>
             );
           })}
         </nav>
 
-        {/* Zone 3: Primary Action Controls */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Search Trigger / Inline Input */}
-          <div className="relative">
-            {isSearchOpen ? (
-              <div className="flex items-center bg-neutral-900 border border-white/10 rounded-full pl-3 pr-2 py-1 w-56 sm:w-72 animate-in fade-in zoom-in-95 duration-150">
-                <Search className="w-3.5 h-3.5 text-neutral-400 shrink-0 mr-2" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  placeholder={language === 'km' ? 'ស្វែងរក ស្បែកជើង, អាវ...' : 'Search boots, jerseys...'}
-                  className="w-full bg-transparent text-xs text-white placeholder-neutral-500 focus:outline-none"
-                  autoFocus
-                />
-                <button
-                  onClick={() => {
-                    setIsSearchOpen(false);
-                    onSearchChange('');
-                  }}
-                  className="p-1 text-neutral-400 hover:text-white"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
+        {/* Right: Actions with normal text labels */}
+        <div className="flex items-center gap-2 sm:gap-3 text-neutral-800">
+          {/* Search Input Box with Text */}
+          <div className="flex items-center bg-neutral-100 rounded-lg px-2.5 py-1.5 w-36 sm:w-56 border border-neutral-200">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder={language === 'km' ? 'ស្វែងរក...' : 'Search gear...'}
+              className="w-full bg-transparent text-xs text-neutral-900 focus:outline-none"
+            />
+            {searchQuery && (
               <button
-                onClick={() => setIsSearchOpen(true)}
-                className="p-2 text-neutral-400 hover:text-white hover:bg-neutral-900 rounded-full transition-colors flex items-center gap-1.5 text-xs"
-                title="Search Products"
+                onClick={() => onSearchChange('')}
+                className="text-[11px] font-bold text-neutral-500 hover:text-black ml-1 cursor-pointer"
               >
-                <Search className="w-4 h-4" />
-                <span className="hidden md:inline text-neutral-400 text-xs font-normal">
-                  {language === 'km' ? 'ស្វែងរក' : 'Search'}
-                </span>
+                Clear
               </button>
             )}
           </div>
 
-          {/* Segmented Currency Selector */}
-          <div className="flex items-center p-0.5 bg-neutral-900 border border-white/[0.08] rounded-full text-[11px] font-mono">
-            <button
-              onClick={() => currency !== 'USD' && onCurrencyToggle()}
-              className={`px-2 py-1 rounded-full transition-all ${
-                currency === 'USD'
-                  ? 'bg-neutral-800 text-white font-bold shadow-xs'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              $ USD
-            </button>
-            <button
-              onClick={() => currency !== 'KHR' && onCurrencyToggle()}
-              className={`px-2 py-1 rounded-full transition-all ${
-                currency === 'KHR'
-                  ? 'bg-amber-400 text-neutral-950 font-bold shadow-xs'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              ៛ KHR
-            </button>
-          </div>
-
-          {/* Language Toggle */}
-          <button
-            onClick={onLanguageToggle}
-            className="px-2.5 py-1 text-neutral-300 hover:text-white bg-neutral-900/80 hover:bg-neutral-850 border border-white/[0.08] rounded-full text-xs font-medium transition-all flex items-center gap-1"
-            title="Switch Language"
+          {/* Telegram Chat Button (Clean text) */}
+          <a
+            href={`https://t.me/${cleanTelegramUsername}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:inline-flex items-center bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-2xs transition-all cursor-pointer"
+            title="Chat Direct to Telegram"
           >
-            <Globe className="w-3 h-3 text-neutral-400" />
-            <span>{language === 'km' ? 'ខ្មែរ' : 'EN'}</span>
-          </button>
+            <span>{language === 'km' ? 'Chat Telegram' : 'Telegram'}</span>
+          </a>
 
-          {/* Order Bag Button */}
+          {/* Inquiry Bag Button (Clean text with counter) */}
           <button
             onClick={onOpenCart}
-            className="relative px-3 py-1.5 bg-neutral-900 hover:bg-neutral-850 border border-white/[0.08] hover:border-white/20 rounded-full text-white text-xs font-medium transition-all flex items-center gap-2 group"
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-neutral-900 hover:bg-neutral-800 text-white transition-colors cursor-pointer flex items-center gap-1.5"
+            title="Shopping Inquiry Bag"
           >
-            <ShoppingBag className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
-            <span className="hidden sm:inline font-mono">Bag</span>
-            {cartCount > 0 ? (
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-neutral-950 text-[10px] font-black font-mono">
-                {cartCount}
-              </span>
-            ) : (
-              <span className="text-neutral-500 font-mono text-[11px]">0</span>
-            )}
-          </button>
-
-          {/* Admin Settings Button */}
-          <button
-            onClick={onOpenAdmin}
-            className="p-2 text-neutral-400 hover:text-amber-300 hover:bg-neutral-900 rounded-full transition-colors"
-            title="Store Admin Panel"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
+            <span>{language === 'km' ? 'កន្ត្រក' : 'Bag'}</span>
+            <span className="font-mono bg-red-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+              {cartCount}
+            </span>
           </button>
         </div>
       </div>
+
+      {/* Mobile Drawer (Clean text) */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden border-t border-neutral-200 px-6 py-4 bg-white space-y-2 shadow-md">
+          {navLinks.map((link) => (
+            <button
+              key={link.id}
+              onClick={() => {
+                onSelectCategory(link.id);
+                setIsMobileMenuOpen(false);
+              }}
+              className={`block w-full text-left py-2 text-xs font-bold tracking-wider cursor-pointer ${
+                activeCategory === link.id ? 'text-red-600' : 'text-neutral-800 hover:text-black'
+              }`}
+            >
+              {language === 'km' ? link.labelKm : link.labelEn}
+            </button>
+          ))}
+          <div className="pt-3 border-t border-neutral-200 flex flex-col gap-2">
+            <a
+              href={`https://t.me/${cleanTelegramUsername}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-2 bg-sky-500 text-white rounded-lg text-xs font-bold text-center"
+            >
+              Telegram: @{cleanTelegramUsername}
+            </a>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

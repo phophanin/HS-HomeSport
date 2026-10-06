@@ -3,12 +3,19 @@
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', 'Kantumruy Pro', system-ui, -apple-system, sans-serif;
+    background-color: #ffffff;
+    color: #111111;
   }
 }
 
+.font-display {
+  font-family: 'Outfit', 'Plus Jakarta Sans', 'Kantumruy Pro', sans-serif;
+  letter-spacing: -0.02em;
+}
+
 .font-athletic {
-  font-family: 'Oswald', 'Kantumruy Pro', sans-serif;
-  letter-spacing: 0.05em;
+  font-family: 'Oswald', 'Outfit', 'Kantumruy Pro', sans-serif;
+  letter-spacing: 0.02em;
 }
 
 .font-khmer {
@@ -21,13 +28,15 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #171717;
+  background: #f8f8f8;
 }
 ::-webkit-scrollbar-thumb {
-  background: #404040;
+  background: #d1d1d1;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #525252;
+  background: #a8a8a8;
 }
+
+
 
