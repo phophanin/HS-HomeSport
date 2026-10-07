@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Star,
   Ruler,
@@ -128,12 +129,19 @@ export const ProductShowcaseView: React.FC<ProductShowcaseViewProps> = ({
 
           {/* Main Hero Photograph Box */}
           <div className="relative flex-1 aspect-[3/4] bg-[#f8f8f7] rounded-2xl overflow-hidden border border-neutral-200/60 shadow-xs flex items-center justify-center p-6">
-            <img
-              src={product.images[activeImageIndex] || product.images[0]}
-              alt={product.name}
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-contain transition-transform duration-700 ease-out hover:scale-105"
-            />
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={activeImageIndex + '-' + product.id}
+                src={product.images[activeImageIndex] || product.images[0]}
+                alt={product.name}
+                referrerPolicy="no-referrer"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.02 }}
+                transition={{ duration: 0.25 }}
+                className="w-full h-full object-contain transition-transform duration-500 ease-out hover:scale-105"
+              />
+            </AnimatePresence>
 
             {/* Magnifying Glass Zoom Icon */}
             <div className="absolute bottom-4 right-4 w-9 h-9 rounded-full bg-white/90 backdrop-blur-xs border border-neutral-200/80 flex items-center justify-center text-neutral-700 shadow-xs cursor-pointer hover:bg-white hover:scale-105 transition-all">
@@ -297,7 +305,9 @@ export const ProductShowcaseView: React.FC<ProductShowcaseViewProps> = ({
           {/* Primary Action Button (Add to Cart / Telegram) + Wishlist Heart */}
           <div className="pt-3 space-y-2.5">
             <div className="flex items-center gap-3">
-              <button
+              <motion.button
+                whileHover={!isSelectedSizeOutOfStock ? { scale: 1.02 } : {}}
+                whileTap={!isSelectedSizeOutOfStock ? { scale: 0.98 } : {}}
                 onClick={handleAddToCart}
                 disabled={isSelectedSizeOutOfStock}
                 className={`flex-1 h-13 font-medium text-sm rounded-xl transition-all flex items-center justify-center gap-2.5 cursor-pointer shadow-xs group ${
@@ -314,9 +324,10 @@ export const ProductShowcaseView: React.FC<ProductShowcaseViewProps> = ({
                     ? (language === 'km' ? '✓ បានដាក់ចូលកន្ត្រក' : '✓ Added to Order Bag')
                     : (language === 'km' ? 'ដាក់ចូលកន្ត្រក (Add to Cart)' : 'Add to Order Bag')}
                 </span>
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
+                whileTap={{ scale: 0.9 }}
                 onClick={() => setIsLiked(!isLiked)}
                 className={`w-13 h-13 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${
                   isLiked
@@ -326,11 +337,13 @@ export const ProductShowcaseView: React.FC<ProductShowcaseViewProps> = ({
                 title="Wishlist"
               >
                 <Heart className={`w-5 h-5 ${isLiked ? 'fill-rose-500' : ''}`} />
-              </button>
+              </motion.button>
             </div>
 
             {/* Direct Instant Order to Telegram */}
-            <button
+            <motion.button
+              whileHover={!isSelectedSizeOutOfStock ? { scale: 1.01 } : {}}
+              whileTap={!isSelectedSizeOutOfStock ? { scale: 0.99 } : {}}
               onClick={handleDirectTelegramOrder}
               disabled={isSelectedSizeOutOfStock}
               className={`w-full h-12 text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer border ${
@@ -345,7 +358,7 @@ export const ProductShowcaseView: React.FC<ProductShowcaseViewProps> = ({
                   ? `កុម្ម៉ង់ផ្ទាល់តាម Telegram @${settings.telegramUsername.replace('@', '')} →`
                   : `Chat to Order on Telegram @${settings.telegramUsername.replace('@', '')} →`}
               </span>
-            </button>
+            </motion.button>
           </div>
 
           {/* 3-Point Shipping & Trust Row */}

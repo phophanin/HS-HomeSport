@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { Language, StoreSettings } from '../types';
 
 interface CategoryBannerGridProps {
@@ -50,11 +51,15 @@ export const CategoryBannerGrid: React.FC<CategoryBannerGridProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {cards.map((card) => (
-          <div
+        {cards.map((card, index) => (
+          <motion.div
             key={card.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+            whileHover={{ y: -6, transition: { duration: 0.2 } }}
             onClick={() => onSelectCategory(card.id)}
-            className="group relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer shadow-xs border border-neutral-200/60"
+            className="group relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl border border-neutral-200/60"
           >
             {/* Background Lifestyle Image */}
             <img
@@ -87,7 +92,7 @@ export const CategoryBannerGrid: React.FC<CategoryBannerGridProps> = ({
                 </span>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>

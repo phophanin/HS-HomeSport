@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { Currency, Language, Product, StoreSettings } from '../types';
 import { calculateDiscount, formatPrice, getTotalStock } from '../utils/formatters';
 
@@ -32,7 +33,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const [selectedQuickSize, setSelectedQuickSize] = useState<string>(firstAvailableSize);
 
   return (
-    <div className="group bg-white rounded-xl border border-neutral-200 hover:border-neutral-900 shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden relative">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.25 }}
+      className="group bg-white rounded-xl border border-neutral-200 hover:border-neutral-900 shadow-2xs hover:shadow-lg transition-shadow flex flex-col overflow-hidden relative"
+    >
       {/* 1. Image Stage with Clean Badges */}
       <div
         onClick={() => onSelectProduct(product)}
@@ -216,6 +224,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
